@@ -1,11 +1,10 @@
-from pprint import pprint
-
 from django.conf import settings
 
 
 __all__ = [
     'ASSET_TYPE_MODEL',
     'ASSET_MODEL',
+    'DELETED_ASSET_MODEL',
 ]
 
 _default_settings = {

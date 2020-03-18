@@ -28,9 +28,9 @@ class AssetTypeManager(models.Manager):
         return required.exclude(pk__in=existing)
 
 
-class AbstractAssetType(models.Model):
+class AssetType(models.Model):
     class Meta:
-        abstract = True
+        abstract = defaults.ASSET_TYPE_MODEL != 'image_assets.AssetType'
 
     objects = AssetTypeManager()
 
@@ -47,19 +47,14 @@ class AbstractAssetType(models.Model):
         return self.slug
 
 
-class AssetType(AbstractAssetType):
-    class Meta:
-        abstract = defaults.ASSET_TYPE_MODEL != 'image_assets.AssetType'
-
-
-def get_asset_type_model() -> Type[AbstractAssetType]:
+def get_asset_type_model() -> Type[AssetType]:
     app_label, model_name = defaults.ASSET_TYPE_MODEL.split('.')
     return apps.get_registered_model(app_label, model_name)
 
 
-class AbstractAsset(models.Model):
+class Asset(models.Model):
     class Meta:
-        abstract = True
+        abstract = defaults.ASSET_MODEL != 'image_assets.Asset'
     image = models.ImageField()
     asset_type = models.ForeignKey(AssetType, models.CASCADE)
     active = models.BooleanField(default=True)
@@ -69,26 +64,16 @@ class AbstractAsset(models.Model):
     related = GenericForeignKey()
 
 
-class Asset(AbstractAsset):
-    class Meta:
-        abstract = defaults.ASSET_MODEL != 'image_assets.Asset'
-
-
-def get_asset_model() -> Type[AbstractAsset]:
+def get_asset_model() -> Type[Asset]:
     app_label, model_name = defaults.ASSET_MODEL.split('.')
     return apps.get_registered_model(app_label, model_name)
 
 
-class AbstractDeletedAsset(models.Model):
+class DeletedAsset(models.Model):
     content_type = models.ForeignKey(ContentType, models.CASCADE)
     object_id = models.IntegerField()
     asset = GenericForeignKey()  # To Asset and subclasses
 
     class Meta:
-        abstract = True
-        unique_together = ('content_type', 'object_id')
-
-
-class DeletedAsset(AbstractDeletedAsset):
-    class Meta:
         abstract = defaults.DELETED_ASSET_MODEL != 'image_asset.DeletedAsset'
+        unique_together = ('content_type', 'object_id')
