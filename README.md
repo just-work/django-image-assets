@@ -82,12 +82,12 @@ existing model and than change image_assets application settings.
         some_feature_flag = models.BooleanField(default=False)
     ```
 2. Change a reference to an asset type model in settings:
-```python
-IMAGE_ASSETS_CONFIG = {
-    'ASSET_TYPE_MODEL': 'my_app.MyAssetType',
-    'ASSET_MODEL': 'image_assets.Asset',
-    'DELETED_ASSET_MODEL': 'image_assets.DeletedAsset'
-}
-```
+    ```python
+    IMAGE_ASSETS_CONFIG = {
+        'ASSET_TYPE_MODEL': 'my_app.MyAssetType',
+        'ASSET_MODEL': 'image_assets.Asset',
+        'DELETED_ASSET_MODEL': 'image_assets.DeletedAsset'
+    }
+    ```
 3. `image_assets.AssetType` will be declared as abstract and `MyAssetType`
     will be returned as result of `image_assets.models.get_asset_type_model()`
