@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
                 ('required_for', models.ManyToManyField(blank=True, related_name='required_asset_types', related_query_name='required_asset_types', to='contenttypes.ContentType')),
             ],
             options={
-                'abstract': False,
+                'abstract': defaults.ASSET_TYPE_MODEL != 'image_assets.AssetType',
             },
         ),
         migrations.CreateModel(
@@ -44,7 +44,7 @@ class Migration(migrations.Migration):
                 ('content_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='contenttypes.ContentType')),
             ],
             options={
-                'abstract': False,
+                'abstract':  defaults.ASSET_MODEL != 'image_assets.Asset',
             },
         ),
         migrations.CreateModel(
@@ -57,7 +57,7 @@ class Migration(migrations.Migration):
                 ('content_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='contenttypes.ContentType')),
             ],
             options={
-                'abstract': False,
+                'abstract': defaults.DELETED_ASSET_MODEL != 'image_assets.DeletedAsset',
                 'unique_together': {('content_type', 'object_id')},
             },
         ),
