@@ -2,8 +2,12 @@ from typing import Type
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.apps import apps
+from django.db.models.fields.files import ImageFieldFile
+from django.utils.translation import gettext_lazy as _
+from PIL import Image
 from image_assets import defaults
 
 
@@ -29,12 +33,23 @@ class AssetTypeManager(models.Manager):
 
 
 class AssetType(models.Model):
-    class Meta:
-        abstract = defaults.ASSET_TYPE_MODEL != 'image_assets.AssetType'
-
-    objects = AssetTypeManager()
+    class Formats(models.TextChoices):
+        JPEG = ('jpeg', 'JPEG')
+        PNG = ('png', 'PNG')
 
     slug = models.SlugField(unique=True)
+    format = models.CharField(
+        verbose_name=_('Image Format'), max_length=4, choices=Formats.choices)
+    min_width = models.IntegerField(
+        verbose_name=_('Min Width'), default=0)
+    min_height = models.IntegerField(
+        verbose_name=_('Min Height'), default=0)
+    aspect = models.FloatField(
+        verbose_name=_('Aspect'), default=0)
+    accuracy = models.FloatField(
+        verbose_name=_('Aspect accuracy'), default=0.01)
+    max_size = models.IntegerField(
+        verbose_name=_('Max file size'), default=0)
 
     required_for = models.ManyToManyField(
         ContentType, blank=True, related_name='required_asset_types',
@@ -43,8 +58,52 @@ class AssetType(models.Model):
         ContentType, blank=True, related_name='allowed_asset_types',
         related_query_name='allowed_asset_types')
 
+    class Meta:
+        abstract = defaults.ASSET_TYPE_MODEL != 'image_assets.AssetType'
+
+    objects = AssetTypeManager()
+
     def __str__(self):
         return self.slug
+
+    @classmethod
+    def validate_asset(cls, value: ImageFieldFile):
+        asset = value.instance
+        if asset.asset_type_id is None:
+            # asset type not filled, no data to validate
+            return
+        errors = []
+        asset_type: AssetType = asset.asset_type
+        if value.width and asset_type.min_width > value.width:
+            msg = _('Image width must be not less than %s')
+            errors.append(msg % asset_type.min_width)
+        if value.height and asset_type.min_height > value.height:
+            msg = _('Image height must be not less than %s')
+            errors.append(msg % asset_type.min_height)
+        if value.width and value.height and asset_type.aspect:
+            image_aspect = value.width / value.height
+            if asset_type.accuracy == 0:
+                if image_aspect != asset_type.aspect:
+                    msg = _('Image aspect must be %s')
+                    errors.append(msg % asset_type.aspect)
+            else:
+                delta = (image_aspect - asset_type.aspect) / asset_type.accuracy
+                if round(delta) > 1:
+                    # round at scale of accuracy
+                    msg = _('Image aspect must be %s ± %s')
+                    args = (asset_type.aspect, asset_type.accuracy)
+                    errors.append(msg % args)
+        if (asset_type.max_size and value.size and
+                asset_type.max_size < value.size):
+            msg = _('Image size must be not greater than %s')
+            errors.append(msg % asset_type.max_size)
+        file = value.path if value.file.closed else value.file
+        with Image.open(file) as image:  # type: Image.Image
+            if image.format.lower() != asset_type.format:
+                msg = _('Image format must be %s')
+                errors.append(msg % asset_type.format)
+        if errors:
+            raise ValidationError(errors)
 
 
 def get_asset_type_model() -> Type[AssetType]:
@@ -55,7 +114,8 @@ def get_asset_type_model() -> Type[AssetType]:
 class Asset(models.Model):
     class Meta:
         abstract = defaults.ASSET_MODEL != 'image_assets.Asset'
-    image = models.ImageField()
+
+    image = models.ImageField(validators=[AssetType.validate_asset])
     asset_type = models.ForeignKey(AssetType, models.CASCADE)
     active = models.BooleanField(default=True)
 

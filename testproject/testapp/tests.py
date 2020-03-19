@@ -4,6 +4,7 @@ from unittest import mock
 from PIL import Image
 from admin_smoke.tests import AdminTests, AdminBaseTestCase, BaseTestCase
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from image_assets import models as assets_models
@@ -20,7 +21,7 @@ class VideoBaseTestCase(BaseTestCase):
         super().setUpTestData()
         cls.image = Image.new('RGB', (60, 30), color='red')
         cls.video_asset_type = assets_models.AssetType.objects.create(
-            slug="video_asset")
+            slug="video_asset", format=assets_models.AssetType.Formats.PNG)
         cls.video_content_type = ContentType.objects.get_for_model(models.Video)
         cls.video_asset_type.required_for.set([cls.video_content_type])
         cls.video = models.Video.objects.create(pk=23)
@@ -165,3 +166,138 @@ class DeletedAssetModelTestCase(VideoBaseTestCase):
         deleted.delete()
 
         self.delete_mock.assert_called_once_with(filename)
+
+
+class AssetValidationTestCase(BaseTestCase):
+    """ Checks image validation for asset type."""
+    image: Image.Image
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.image = Image.new('RGB', (60, 30), color='red')
+        cls.asset_type = assets_models.AssetType.objects.create(
+            slug="video_asset",
+            min_width=0,
+            min_height=0,
+            max_size=0,
+            aspect=0,
+            accuracy=0,
+            format=assets_models.AssetType.Formats.PNG)
+        cls.asset = assets_models.Asset(
+            asset_type=cls.asset_type,
+            image=cls.create_uploaded_file())
+
+    @classmethod
+    def create_uploaded_file(cls, image_format='png', filename='asset.png'):
+        buffer = io.BytesIO()
+        cls.image.save(buffer, format=image_format)
+        return SimpleUploadedFile(
+            filename, buffer.getvalue())
+
+    def setUp(self):
+        super().setUp()
+        # copy asset_type from cls to self
+        self.asset_type: assets_models.AssetType = self.reload(self.asset_type)
+        self.asset.asset_type = self.asset_type
+
+    def assert_validation_not_passed(self):
+        try:
+            self.asset.full_clean()
+        except ValidationError as e:
+            invalid_keys = set(e.error_dict)
+            expected = {'asset_type', 'content_type', 'object_id'}
+            self.assertTrue(invalid_keys - expected)
+
+    def assert_validation_passed(self):
+        try:
+            self.asset.full_clean()
+        except ValidationError as e:
+            invalid_keys = set(e.error_dict)
+            expected = {'asset_type', 'content_type', 'object_id'}
+            self.assertFalse(invalid_keys - expected)
+
+    def test_validate_without_asset_type(self):
+        """ Asset object passes image validation if no asset type is set."""
+        self.asset.asset_type = None
+
+        self.assert_validation_passed()
+
+        self.asset.asset_type = self.asset_type
+        self.asset_type.max_size = 1
+
+        self.assert_validation_not_passed()
+
+    def test_validate_format(self):
+        """ Asset image format must correspond asset type format."""
+        self.asset_type.format = assets_models.AssetType.Formats.JPEG
+
+        self.assert_validation_not_passed()
+
+        self.asset.image = self.create_uploaded_file(
+            image_format='jpeg', filename='asset.jpg')
+
+        self.assert_validation_passed()
+
+        # format is checked from image, not filename
+        self.asset.image = self.create_uploaded_file(
+            image_format='png', filename='asset.jpg')
+
+        self.assert_validation_not_passed()
+
+    def test_validate_min_width(self):
+        """ Asset image width must correspond asset type min width."""
+        self.asset_type.min_width = self.image.width + 1
+
+        self.assert_validation_not_passed()
+
+        self.asset_type.min_width = self.image.width
+
+        self.assert_validation_passed()
+
+    def test_validate_min_height(self):
+        """ Asset image height must correspond asset type min height."""
+        self.asset_type.min_height = self.image.height + 1
+
+        self.assert_validation_not_passed()
+
+        self.asset_type.min_height = self.image.height
+
+        self.assert_validation_passed()
+
+    def test_validate_max_size(self):
+        """ Asset file size must correspond asset type max size."""
+        # zero max size disables file size check
+        self.assert_validation_passed()
+
+        self.asset_type.max_size = self.asset.image.size - 1
+
+        self.assert_validation_not_passed()
+
+        self.asset_type.max_size = self.asset.image.size
+
+        self.assert_validation_passed()
+
+    def test_validate_aspect_with_accuracy(self):
+        """
+        Asset aspect ratio must correspond asset type aspect with accuracy.
+        """
+        # zero aspect disables aspect check
+        self.assert_validation_passed()
+
+        self.asset_type.aspect = 2.1
+
+        self.assert_validation_not_passed()
+
+        self.asset_type.accuracy = 0.1
+
+        self.assert_validation_passed()
+
+        self.asset_type.aspect = 1.8
+
+        self.assert_validation_not_passed()
+
+        self.asset_type.aspect = 1.99
+        self.asset_type.accuracy = 0.01
+
+        self.assert_validation_passed()
