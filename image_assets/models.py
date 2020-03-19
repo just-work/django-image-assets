@@ -77,34 +77,40 @@ class AssetType(models.Model):
             return
         errors = []
         asset_type: AssetType = asset.asset_type
-        if value.width and asset_type.min_width > value.width:
-            msg = _('Image width must be not less than %s')
-            errors.append(msg % asset_type.min_width)
-        if value.height and asset_type.min_height > value.height:
-            msg = _('Image height must be not less than %s')
-            errors.append(msg % asset_type.min_height)
-        if value.width and value.height and asset_type.aspect:
-            image_aspect = value.width / value.height
-            if asset_type.accuracy == 0:
-                if image_aspect != asset_type.aspect:
-                    msg = _('Image aspect must be %s')
-                    errors.append(msg % asset_type.aspect)
-            else:
-                delta = (image_aspect - asset_type.aspect) / asset_type.accuracy
-                if round(delta) > 1:
-                    # round at scale of accuracy
-                    msg = _('Image aspect must be %s ± %s')
-                    args = (asset_type.aspect, asset_type.accuracy)
-                    errors.append(msg % args)
+
+        # validate file size
         if (asset_type.max_size and value.size and
                 asset_type.max_size < value.size):
             msg = _('Image size must be not greater than %s')
             errors.append(msg % asset_type.max_size)
-        file = value.path if value.file.closed else value.file
-        with Image.open(file) as image:  # type: Image.Image
+
+        # open image and validate it's content
+        with Image.open(value.file) as image:  # type: Image.Image
+            # internal image format
             if image.format.lower() != asset_type.format:
                 msg = _('Image format must be %s')
                 errors.append(msg % asset_type.format)
+            # image width
+            if image.width and asset_type.min_width > image.width:
+                msg = _('Image width must be not less than %s')
+                errors.append(msg % asset_type.min_width)
+            # image height
+            if image.height and asset_type.min_height > image.height:
+                msg = _('Image height must be not less than %s')
+                errors.append(msg % asset_type.min_height)
+            if image.width and image.height and asset_type.aspect:
+                image_aspect = image.width / image.height
+                delta = image_aspect - asset_type.aspect
+                if asset_type.accuracy == 0:
+                    if image_aspect != asset_type.aspect:
+                        msg = _('Image aspect must be %s')
+                        errors.append(msg % asset_type.aspect)
+                elif round(delta / asset_type.accuracy) > 1:
+                    # round at scale of accuracy
+                    msg = _('Image aspect must be %s ± %s')
+                    args = (asset_type.aspect, asset_type.accuracy)
+                    errors.append(msg % args)
+
         if errors:
             raise ValidationError(errors)
 

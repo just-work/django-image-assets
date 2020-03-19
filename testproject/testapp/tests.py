@@ -27,33 +27,17 @@ class VideoBaseTestCase(BaseTestCase):
         cls.video = models.Video.objects.create(pk=23)
 
     @classmethod
-    def create_uploaded_file(cls, image_format='png', filename="asset.jpg"):
+    def create_uploaded_file(cls, image_format='png', filename="asset.png"):
         buffer = io.BytesIO()
         cls.image.save(buffer, format=image_format)
         return SimpleUploadedFile(
-            filename, buffer.getvalue(), content_type="image/jpeg")
+            filename, buffer.getvalue(), content_type="image/png")
 
     def setUp(self):
         super().setUp()
-        self.delete_patcher = mock.patch(
-            'django.core.files.storage.FileSystemStorage.delete')
-        self.delete_mock = self.delete_patcher.start()
-        self.save_patcher = mock.patch(
-            'django.core.files.storage.FileSystemStorage.save',
-            side_effect=self._storage_save_mock)
-        self.save_mock = self.save_patcher.start()
-        self.open_patcher = mock.patch(
-            'django.core.files.storage.FileSystemStorage._open',
-            return_value=mock.mock_open()
-        )
         self.asset = self.video.assets.create(
             asset_type=self.asset_type,
             active=True, image=self.create_uploaded_file())
-
-    def tearDown(self):
-        super().tearDown()
-        self.delete_patcher.stop()
-        self.save_patcher.stop()
 
     # noinspection PyUnusedLocal
     @staticmethod
@@ -147,6 +131,16 @@ class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
 
 class DeletedAssetModelTestCase(VideoBaseTestCase):
     """ Asset deletion handling test case."""
+
+    def setUp(self):
+        super().setUp()
+        self.delete_patcher = mock.patch(
+            'inmemorystorage.InMemoryStorage.delete')
+        self.delete_mock = self.delete_patcher.start()
+
+    def tearDown(self):
+        super().tearDown()
+        self.delete_patcher.stop()
 
     def test_delete_asset(self):
         """
