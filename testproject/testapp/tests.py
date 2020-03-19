@@ -1,19 +1,17 @@
 import io
+from unittest import mock
 
-from admin_smoke.tests import AdminTests, AdminBaseTestCase
+from PIL import Image
+from admin_smoke.tests import AdminTests, AdminBaseTestCase, BaseTestCase
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
-from PIL import Image
 
 from image_assets import models as assets_models
 from testproject.testapp import admin, models
 
 
-class VideoAdminTestCase(AdminTests, AdminBaseTestCase):
-    model_admin = admin.VideoAdmin
-    model = models.Video
-    object_name = 'video'
-    prefix = 'image_assets-asset-content_type-object_id'
+class VideoBaseTestCase(BaseTestCase):
+    """ Common methods for test cases."""
 
     image: Image.Image
 
@@ -26,9 +24,6 @@ class VideoAdminTestCase(AdminTests, AdminBaseTestCase):
         cls.video_content_type = ContentType.objects.get_for_model(models.Video)
         cls.video_asset_type.required_for.set([cls.video_content_type])
         cls.video = models.Video.objects.create(pk=23)
-        cls.asset = cls.video.assets.create(
-            asset_type=cls.video_asset_type,
-            active=True, image=cls.create_uploaded_file())
 
     @classmethod
     def create_uploaded_file(cls):
@@ -36,6 +31,36 @@ class VideoAdminTestCase(AdminTests, AdminBaseTestCase):
         cls.image.save(buffer, format='png')
         return SimpleUploadedFile(
             "asset.jpg", buffer.getvalue(), content_type="image/jpeg")
+
+    def setUp(self):
+        super().setUp()
+        self.delete_patcher = mock.patch(
+            'django.core.files.storage.FileSystemStorage.delete')
+        self.delete_mock = self.delete_patcher.start()
+        self.save_patcher = mock.patch(
+            'django.core.files.storage.FileSystemStorage.save',
+            side_effect=self._storage_save_mock)
+        self.save_mock = self.save_patcher.start()
+        self.asset = self.video.assets.create(
+            asset_type=self.video_asset_type,
+            active=True, image=self.create_uploaded_file())
+
+    def tearDown(self):
+        super().tearDown()
+        self.delete_patcher.stop()
+        self.save_patcher.stop()
+
+    # noinspection PyUnusedLocal
+    @staticmethod
+    def _storage_save_mock(name, content, max_length=None):
+        return name
+
+
+class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
+    model_admin = admin.VideoAdmin
+    model = models.Video
+    object_name = 'video'
+    prefix = 'image_assets-asset-content_type-object_id'
 
     def transform_to_new(self, data: dict) -> dict:
         self.reset_inline_data(data, self.prefix, None)
@@ -113,3 +138,30 @@ class VideoAdminTestCase(AdminTests, AdminBaseTestCase):
             active=False)
         asset = self.video.assets.last()
         self.assertTrue(asset.active)
+
+
+class DeletedAssetModelTestCase(VideoBaseTestCase):
+    """ Asset deletion handling test case."""
+
+    def test_delete_asset(self):
+        """
+        Asset file is moved to DeletedAsset instance after asset deletion.
+        """
+        filename = self.asset.image.name
+        self.asset.delete()
+
+        self.delete_mock.assert_not_called()
+        deleted = assets_models.DeletedAsset.objects.get()
+        self.assertEqual(deleted.image.name, filename)
+
+    def test_purge_deleted_asset(self):
+        """
+        A file for DeletedAsset is purged on object deletion.
+        """
+        self.asset.delete()
+        deleted = assets_models.DeletedAsset.objects.get()
+        filename = deleted.image.name
+
+        deleted.delete()
+
+        self.delete_mock.assert_called_once_with(filename)
