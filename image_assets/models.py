@@ -70,10 +70,18 @@ def get_asset_model() -> Type[Asset]:
 
 
 class DeletedAsset(models.Model):
+    image = models.ImageField()
+    asset_type = models.ForeignKey(AssetType, models.CASCADE)
+
     content_type = models.ForeignKey(ContentType, models.CASCADE)
     object_id = models.IntegerField()
-    asset = GenericForeignKey()  # To Asset and subclasses
+    related = GenericForeignKey()
 
     class Meta:
-        abstract = defaults.DELETED_ASSET_MODEL != 'image_asset.DeletedAsset'
+        abstract = defaults.DELETED_ASSET_MODEL != 'image_assets.DeletedAsset'
         unique_together = ('content_type', 'object_id')
+
+
+def get_deleted_asset_model() -> Type[DeletedAsset]:
+    app_label, model_name = defaults.DELETED_ASSET_MODEL.split('.')
+    return apps.get_registered_model(app_label, model_name)
