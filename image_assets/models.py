@@ -33,13 +33,16 @@ class AssetTypeManager(models.Manager):
 
 
 class AssetType(models.Model):
-    class Formats(models.TextChoices):
-        JPEG = ('jpeg', 'JPEG')
-        PNG = ('png', 'PNG')
+    JPEG = 'jpeg'
+    PNG = 'png'
+    FORMAT_CHOICES = (
+        (JPEG, 'JPEG'),
+        (PNG, 'PNG')
+    )
 
     slug = models.SlugField(unique=True)
     format = models.CharField(
-        verbose_name=_('Image Format'), max_length=4, choices=Formats.choices)
+        verbose_name=_('Image Format'), max_length=4, choices=FORMAT_CHOICES)
     min_width = models.IntegerField(
         verbose_name=_('Min Width'), default=0)
     min_height = models.IntegerField(

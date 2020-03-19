@@ -21,7 +21,7 @@ class VideoBaseTestCase(BaseTestCase):
         super().setUpTestData()
         cls.image = Image.new('RGB', (60, 30), color='red')
         cls.video_asset_type = assets_models.AssetType.objects.create(
-            slug="video_asset", format=assets_models.AssetType.Formats.PNG)
+            slug="video_asset", format=assets_models.AssetType.PNG)
         cls.video_content_type = ContentType.objects.get_for_model(models.Video)
         cls.video_asset_type.required_for.set([cls.video_content_type])
         cls.video = models.Video.objects.create(pk=23)
@@ -183,7 +183,7 @@ class AssetValidationTestCase(BaseTestCase):
             max_size=0,
             aspect=0,
             accuracy=0,
-            format=assets_models.AssetType.Formats.PNG)
+            format=assets_models.AssetType.PNG)
         cls.asset = assets_models.Asset(
             asset_type=cls.asset_type,
             image=cls.create_uploaded_file())
@@ -230,7 +230,7 @@ class AssetValidationTestCase(BaseTestCase):
 
     def test_validate_format(self):
         """ Asset image format must correspond asset type format."""
-        self.asset_type.format = assets_models.AssetType.Formats.JPEG
+        self.asset_type.format = assets_models.AssetType.JPEG
 
         self.assert_validation_not_passed()
 
