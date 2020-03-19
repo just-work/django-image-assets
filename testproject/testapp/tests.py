@@ -45,6 +45,49 @@ class VideoBaseTestCase(BaseTestCase):
         return name
 
 
+class VideoAssetTypeTestCase(VideoBaseTestCase):
+    video_content_type: ContentType
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.allowed_asset_type = assets_models.AssetType.objects.create(
+            slug="allowed_asset", format=assets_models.AssetType.PNG)
+        cls.allowed_asset_type.allowed_for.set(
+            [cls.video_content_type])
+        cls.unrelated_asset_type = assets_models.AssetType.objects.create(
+            slug="unrelated", format=assets_models.AssetType.PNG)
+
+    def test_required_asset_types(self):
+        """ Check fetching required asset types for model or instance."""
+        qs = assets_models.AssetType.objects.get_required(self.video)
+        # Video has active asset of required asset type
+        self.assertEqual(qs.count(), 0)
+
+        qs = assets_models.AssetType.objects.get_required(models.Video)
+        # For Video model one required asset type
+        self.assertEqual(set(qs), {self.asset_type})
+
+        qs = assets_models.AssetType.objects.get_required(None)
+        # Return all asset types
+        self.assertEqual(set(qs), {self.asset_type, self.allowed_asset_type,
+                                   self.unrelated_asset_type})
+
+        self.update_object(self.asset, active=False)
+
+        qs = assets_models.AssetType.objects.get_required(self.video)
+        # Video has inactive asset of required asset type
+        self.assertEqual(set(qs), {self.asset_type})
+
+        self.update_object(self.asset, active=True,
+                           asset_type=self.allowed_asset_type)
+
+        qs = assets_models.AssetType.objects.get_required(self.video)
+        # Video has active asset for another asset type
+        self.assertEqual(set(qs), {self.asset_type})
+
+
+
 class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
     model_admin = admin.VideoAdmin
     model = models.Video

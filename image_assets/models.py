@@ -5,6 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.apps import apps
+from django.db.models.base import ModelBase
 from django.db.models.fields.files import ImageFieldFile
 from django.utils.translation import gettext_lazy as _
 from PIL import Image
@@ -24,7 +25,7 @@ class AssetTypeManager(models.Manager):
             return self.all()
         ct = ContentType.objects.get_for_model(instance)
         required = self.filter(required_for=ct)
-        if instance.pk is None:
+        if instance.pk is None or isinstance(instance, ModelBase):
             return required
         existing = get_asset_model().objects.filter(
             active=True, content_type=ct, object_id=instance.pk).values(
