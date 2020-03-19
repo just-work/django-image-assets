@@ -4,6 +4,7 @@ from unittest import mock
 from PIL import Image
 from admin_smoke.tests import AdminTests, AdminBaseTestCase, BaseTestCase
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from image_assets import models as assets_models
@@ -19,41 +20,72 @@ class VideoBaseTestCase(BaseTestCase):
     def setUpTestData(cls):
         super().setUpTestData()
         cls.image = Image.new('RGB', (60, 30), color='red')
-        cls.video_asset_type = assets_models.AssetType.objects.create(
-            slug="video_asset")
+        cls.asset_type = assets_models.AssetType.objects.create(
+            slug="video_asset", format=assets_models.AssetType.PNG)
         cls.video_content_type = ContentType.objects.get_for_model(models.Video)
-        cls.video_asset_type.required_for.set([cls.video_content_type])
+        cls.asset_type.required_for.set([cls.video_content_type])
         cls.video = models.Video.objects.create(pk=23)
 
     @classmethod
-    def create_uploaded_file(cls):
+    def create_uploaded_file(cls, image_format='png', filename="asset.png"):
         buffer = io.BytesIO()
-        cls.image.save(buffer, format='png')
+        cls.image.save(buffer, format=image_format)
         return SimpleUploadedFile(
-            "asset.jpg", buffer.getvalue(), content_type="image/jpeg")
+            filename, buffer.getvalue(), content_type="image/png")
 
     def setUp(self):
         super().setUp()
-        self.delete_patcher = mock.patch(
-            'django.core.files.storage.FileSystemStorage.delete')
-        self.delete_mock = self.delete_patcher.start()
-        self.save_patcher = mock.patch(
-            'django.core.files.storage.FileSystemStorage.save',
-            side_effect=self._storage_save_mock)
-        self.save_mock = self.save_patcher.start()
         self.asset = self.video.assets.create(
-            asset_type=self.video_asset_type,
+            asset_type=self.asset_type,
             active=True, image=self.create_uploaded_file())
-
-    def tearDown(self):
-        super().tearDown()
-        self.delete_patcher.stop()
-        self.save_patcher.stop()
 
     # noinspection PyUnusedLocal
     @staticmethod
     def _storage_save_mock(name, content, max_length=None):
         return name
+
+
+class VideoAssetTypeTestCase(VideoBaseTestCase):
+    video_content_type: ContentType
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.allowed_asset_type = assets_models.AssetType.objects.create(
+            slug="allowed_asset", format=assets_models.AssetType.PNG)
+        cls.allowed_asset_type.allowed_for.set(
+            [cls.video_content_type])
+        cls.unrelated_asset_type = assets_models.AssetType.objects.create(
+            slug="unrelated", format=assets_models.AssetType.PNG)
+
+    def test_required_asset_types(self):
+        """ Check fetching required asset types for model or instance."""
+        qs = assets_models.AssetType.objects.get_required(self.video)
+        # Video has active asset of required asset type
+        self.assertEqual(qs.count(), 0)
+
+        qs = assets_models.AssetType.objects.get_required(models.Video)
+        # For Video model one required asset type
+        self.assertEqual(set(qs), {self.asset_type})
+
+        qs = assets_models.AssetType.objects.get_required(None)
+        # Return all asset types
+        self.assertEqual(set(qs), {self.asset_type, self.allowed_asset_type,
+                                   self.unrelated_asset_type})
+
+        self.update_object(self.asset, active=False)
+
+        qs = assets_models.AssetType.objects.get_required(self.video)
+        # Video has inactive asset of required asset type
+        self.assertEqual(set(qs), {self.asset_type})
+
+        self.update_object(self.asset, active=True,
+                           asset_type=self.allowed_asset_type)
+
+        qs = assets_models.AssetType.objects.get_required(self.video)
+        # Video has active asset for another asset type
+        self.assertEqual(set(qs), {self.asset_type})
+
 
 
 class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
@@ -85,7 +117,7 @@ class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertIsNotNone(self.get_errors_from_response(r))
 
-        self.video_asset_type.required_for.clear()
+        self.asset_type.required_for.clear()
 
         r = self.client.post(url, data=data)
 
@@ -94,7 +126,7 @@ class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
 
     def test_validate_allowed_asset_type(self):
         """ If asset type is not allowed, object will not be saved."""
-        self.video_asset_type.required_for.clear()
+        self.asset_type.required_for.clear()
         r = self.client.get(self.change_url)
         data = self.get_form_data_from_response(r)
         url = self.add_url
@@ -106,7 +138,7 @@ class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertIsNotNone(self.get_errors_from_response(r))
 
-        self.video_asset_type.allowed_for.set([self.video_content_type])
+        self.asset_type.allowed_for.set([self.video_content_type])
         data[f'{self.prefix}-0-image'] = self.create_uploaded_file()
 
         r = self.client.post(url, data=data)
@@ -119,7 +151,7 @@ class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
         r = self.client.get(self.change_url)
         data = self.get_form_data_from_response(r)
         data[f'{self.prefix}-1-image'] = self.create_uploaded_file()
-        data[f'{self.prefix}-1-asset_type'] = self.video_asset_type.id
+        data[f'{self.prefix}-1-asset_type'] = self.asset_type.id
 
         r = self.client.post(self.change_url, data=data)
 
@@ -143,6 +175,16 @@ class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
 class DeletedAssetModelTestCase(VideoBaseTestCase):
     """ Asset deletion handling test case."""
 
+    def setUp(self):
+        super().setUp()
+        self.delete_patcher = mock.patch(
+            'inmemorystorage.InMemoryStorage.delete')
+        self.delete_mock = self.delete_patcher.start()
+
+    def tearDown(self):
+        super().tearDown()
+        self.delete_patcher.stop()
+
     def test_delete_asset(self):
         """
         Asset file is moved to DeletedAsset instance after asset deletion.
@@ -165,3 +207,108 @@ class DeletedAssetModelTestCase(VideoBaseTestCase):
         deleted.delete()
 
         self.delete_mock.assert_called_once_with(filename)
+
+
+class AssetValidationTestCase(VideoBaseTestCase):
+    """ Checks image validation for asset type."""
+
+    def assert_validation_not_passed(self):
+        try:
+            self.asset.full_clean()
+        except ValidationError as e:
+            invalid_keys = set(e.error_dict)
+            expected = {'asset_type', 'content_type', 'object_id'}
+            self.assertTrue(invalid_keys - expected)
+
+    def assert_validation_passed(self):
+        try:
+            self.asset.full_clean()
+        except ValidationError as e:
+            invalid_keys = set(e.error_dict)
+            expected = {'asset_type', 'content_type', 'object_id'}
+            self.assertFalse(invalid_keys - expected)
+
+    def test_validate_without_asset_type(self):
+        """ Asset object passes image validation if no asset type is set."""
+        self.asset.asset_type = None
+
+        self.assert_validation_passed()
+
+        self.asset.asset_type = self.asset_type
+        self.asset_type.max_size = 1
+
+        self.assert_validation_not_passed()
+
+    def test_validate_format(self):
+        """ Asset image format must correspond asset type format."""
+        self.asset_type.format = assets_models.AssetType.JPEG
+
+        self.assert_validation_not_passed()
+
+        self.asset.image = self.create_uploaded_file(
+            image_format='jpeg', filename='asset.jpg')
+
+        self.assert_validation_passed()
+
+        # format is checked from image, not filename
+        self.asset.image = self.create_uploaded_file(
+            image_format='png', filename='asset.jpg')
+
+        self.assert_validation_not_passed()
+
+    def test_validate_min_width(self):
+        """ Asset image width must correspond asset type min width."""
+        self.asset_type.min_width = self.image.width + 1
+
+        self.assert_validation_not_passed()
+
+        self.asset_type.min_width = self.image.width
+
+        self.assert_validation_passed()
+
+    def test_validate_min_height(self):
+        """ Asset image height must correspond asset type min height."""
+        self.asset_type.min_height = self.image.height + 1
+
+        self.assert_validation_not_passed()
+
+        self.asset_type.min_height = self.image.height
+
+        self.assert_validation_passed()
+
+    def test_validate_max_size(self):
+        """ Asset file size must correspond asset type max size."""
+        # zero max size disables file size check
+        self.assert_validation_passed()
+
+        self.asset_type.max_size = self.asset.image.size - 1
+
+        self.assert_validation_not_passed()
+
+        self.asset_type.max_size = self.asset.image.size
+
+        self.assert_validation_passed()
+
+    def test_validate_aspect_with_accuracy(self):
+        """
+        Asset aspect ratio must correspond asset type aspect with accuracy.
+        """
+        # zero aspect disables aspect check
+        self.assert_validation_passed()
+
+        self.asset_type.aspect = 2.1
+
+        self.assert_validation_not_passed()
+
+        self.asset_type.accuracy = 0.1
+
+        self.assert_validation_passed()
+
+        self.asset_type.aspect = 1.8
+
+        self.assert_validation_not_passed()
+
+        self.asset_type.aspect = 1.99
+        self.asset_type.accuracy = 0.01
+
+        self.assert_validation_passed()

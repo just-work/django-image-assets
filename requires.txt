@@ -1,3 +1,4 @@
 Django==3.0.4
 Pillow==7.0.0
-django-admin-smoke==0.0.3
+django-admin-smoke==0.0.4
+dj-inmemorystorage==2.0.0
