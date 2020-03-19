@@ -3,6 +3,7 @@
 from django.db import migrations, models
 import django.db.models.deletion
 import image_assets.models
+from image_assets import defaults
 
 
 class Migration(migrations.Migration):
@@ -29,7 +30,7 @@ class Migration(migrations.Migration):
                 ('required_for', models.ManyToManyField(blank=True, related_name='required_asset_types', related_query_name='required_asset_types', to='contenttypes.ContentType')),
             ],
             options={
-                'abstract': False,
+                'abstract': defaults.ASSET_TYPE_MODEL != 'image_assets.AssetType',
             },
         ),
         migrations.CreateModel(
@@ -39,11 +40,11 @@ class Migration(migrations.Migration):
                 ('image', models.ImageField(upload_to='', validators=[image_assets.models.AssetType.validate_asset])),
                 ('active', models.BooleanField(default=True)),
                 ('object_id', models.IntegerField()),
-                ('asset_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='image_assets.AssetType')),
+                ('asset_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=defaults.ASSET_TYPE_MODEL)),
                 ('content_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='contenttypes.ContentType')),
             ],
             options={
-                'abstract': False,
+                'abstract':  defaults.ASSET_MODEL != 'image_assets.Asset',
             },
         ),
         migrations.CreateModel(
@@ -52,11 +53,11 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('image', models.ImageField(upload_to='')),
                 ('object_id', models.IntegerField()),
-                ('asset_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='image_assets.AssetType')),
+                ('asset_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=defaults.ASSET_TYPE_MODEL)),
                 ('content_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='contenttypes.ContentType')),
             ],
             options={
-                'abstract': False,
+                'abstract': defaults.DELETED_ASSET_MODEL != 'image_assets.DeletedAsset',
                 'unique_together': {('content_type', 'object_id')},
             },
         ),
