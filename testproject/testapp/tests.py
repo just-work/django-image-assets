@@ -20,18 +20,18 @@ class VideoBaseTestCase(BaseTestCase):
     def setUpTestData(cls):
         super().setUpTestData()
         cls.image = Image.new('RGB', (60, 30), color='red')
-        cls.video_asset_type = assets_models.AssetType.objects.create(
+        cls.asset_type = assets_models.AssetType.objects.create(
             slug="video_asset", format=assets_models.AssetType.PNG)
         cls.video_content_type = ContentType.objects.get_for_model(models.Video)
-        cls.video_asset_type.required_for.set([cls.video_content_type])
+        cls.asset_type.required_for.set([cls.video_content_type])
         cls.video = models.Video.objects.create(pk=23)
 
     @classmethod
-    def create_uploaded_file(cls):
+    def create_uploaded_file(cls, image_format='png', filename="asset.jpg"):
         buffer = io.BytesIO()
-        cls.image.save(buffer, format='png')
+        cls.image.save(buffer, format=image_format)
         return SimpleUploadedFile(
-            "asset.jpg", buffer.getvalue(), content_type="image/jpeg")
+            filename, buffer.getvalue(), content_type="image/jpeg")
 
     def setUp(self):
         super().setUp()
@@ -42,8 +42,12 @@ class VideoBaseTestCase(BaseTestCase):
             'django.core.files.storage.FileSystemStorage.save',
             side_effect=self._storage_save_mock)
         self.save_mock = self.save_patcher.start()
+        self.open_patcher = mock.patch(
+            'django.core.files.storage.FileSystemStorage._open',
+            return_value=mock.mock_open()
+        )
         self.asset = self.video.assets.create(
-            asset_type=self.video_asset_type,
+            asset_type=self.asset_type,
             active=True, image=self.create_uploaded_file())
 
     def tearDown(self):
@@ -86,7 +90,7 @@ class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertIsNotNone(self.get_errors_from_response(r))
 
-        self.video_asset_type.required_for.clear()
+        self.asset_type.required_for.clear()
 
         r = self.client.post(url, data=data)
 
@@ -95,7 +99,7 @@ class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
 
     def test_validate_allowed_asset_type(self):
         """ If asset type is not allowed, object will not be saved."""
-        self.video_asset_type.required_for.clear()
+        self.asset_type.required_for.clear()
         r = self.client.get(self.change_url)
         data = self.get_form_data_from_response(r)
         url = self.add_url
@@ -107,7 +111,7 @@ class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertIsNotNone(self.get_errors_from_response(r))
 
-        self.video_asset_type.allowed_for.set([self.video_content_type])
+        self.asset_type.allowed_for.set([self.video_content_type])
         data[f'{self.prefix}-0-image'] = self.create_uploaded_file()
 
         r = self.client.post(url, data=data)
@@ -120,7 +124,7 @@ class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
         r = self.client.get(self.change_url)
         data = self.get_form_data_from_response(r)
         data[f'{self.prefix}-1-image'] = self.create_uploaded_file()
-        data[f'{self.prefix}-1-asset_type'] = self.video_asset_type.id
+        data[f'{self.prefix}-1-asset_type'] = self.asset_type.id
 
         r = self.client.post(self.change_url, data=data)
 
@@ -168,38 +172,8 @@ class DeletedAssetModelTestCase(VideoBaseTestCase):
         self.delete_mock.assert_called_once_with(filename)
 
 
-class AssetValidationTestCase(BaseTestCase):
+class AssetValidationTestCase(VideoBaseTestCase):
     """ Checks image validation for asset type."""
-    image: Image.Image
-
-    @classmethod
-    def setUpTestData(cls):
-        super().setUpTestData()
-        cls.image = Image.new('RGB', (60, 30), color='red')
-        cls.asset_type = assets_models.AssetType.objects.create(
-            slug="video_asset",
-            min_width=0,
-            min_height=0,
-            max_size=0,
-            aspect=0,
-            accuracy=0,
-            format=assets_models.AssetType.PNG)
-        cls.asset = assets_models.Asset(
-            asset_type=cls.asset_type,
-            image=cls.create_uploaded_file())
-
-    @classmethod
-    def create_uploaded_file(cls, image_format='png', filename='asset.png'):
-        buffer = io.BytesIO()
-        cls.image.save(buffer, format=image_format)
-        return SimpleUploadedFile(
-            filename, buffer.getvalue())
-
-    def setUp(self):
-        super().setUp()
-        # copy asset_type from cls to self
-        self.asset_type: assets_models.AssetType = self.reload(self.asset_type)
-        self.asset.asset_type = self.asset_type
 
     def assert_validation_not_passed(self):
         try:
