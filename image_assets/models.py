@@ -141,7 +141,7 @@ def get_asset_model() -> Type[Asset]:
 
 class DeletedAsset(models.Model):
     image = models.ImageField()
-    asset_type = models.ForeignKey(AssetType, models.CASCADE)
+    asset_type = models.ForeignKey(defaults.ASSET_TYPE_MODEL, models.CASCADE)
 
     content_type = models.ForeignKey(ContentType, models.CASCADE)
     object_id = models.IntegerField()
