@@ -1,43 +1,30 @@
-import io
 from unittest import mock
 
-from PIL import Image
 from admin_smoke.tests import AdminTests, AdminBaseTestCase, BaseTestCase
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.core.files.uploadedfile import SimpleUploadedFile
 
 from image_assets import models as assets_models
+from image_assets.tests.mixins import ImageAssetsMixin
 from testproject.testapp import admin, models
 
 
-class VideoBaseTestCase(BaseTestCase):
+class VideoBaseTestCase(ImageAssetsMixin, BaseTestCase):
     """ Common methods for test cases."""
-
-    image: Image.Image
 
     @classmethod
     def setUpTestData(cls):
         super().setUpTestData()
-        cls.image = Image.new('RGB', (60, 30), color='red')
-        cls.asset_type = assets_models.AssetType.objects.create(
-            slug="video_asset", format=assets_models.AssetType.PNG)
-        cls.video_content_type = ContentType.objects.get_for_model(models.Video)
-        cls.asset_type.required_for.set([cls.video_content_type])
+        cls.image = cls.create_image()
+        cls.asset_type = cls.create_asset_type(
+            slug="video_asset", format=assets_models.AssetType.PNG,
+            required_for=[models.Video])
         cls.video = models.Video.objects.create(pk=23)
-
-    @classmethod
-    def create_uploaded_file(cls, image_format='png', filename="asset.png"):
-        buffer = io.BytesIO()
-        cls.image.save(buffer, format=image_format)
-        return SimpleUploadedFile(
-            filename, buffer.getvalue(), content_type="image/png")
 
     def setUp(self):
         super().setUp()
-        self.asset = self.video.assets.create(
-            asset_type=self.asset_type,
-            active=True, image=self.create_uploaded_file())
+        self.asset = self.create_asset(
+            self.asset_type, image=self.image, related=self.video, active=True)
 
     # noinspection PyUnusedLocal
     @staticmethod
@@ -51,11 +38,11 @@ class VideoAssetTypeTestCase(VideoBaseTestCase):
     @classmethod
     def setUpTestData(cls):
         super().setUpTestData()
-        cls.allowed_asset_type = assets_models.AssetType.objects.create(
-            slug="allowed_asset", format=assets_models.AssetType.PNG)
-        cls.allowed_asset_type.allowed_for.set(
-            [cls.video_content_type])
-        cls.unrelated_asset_type = assets_models.AssetType.objects.create(
+        cls.allowed_asset_type = cls.create_asset_type(
+            slug="allowed_asset", format=assets_models.AssetType.PNG,
+            allowed_for=[models.Video]
+        )
+        cls.unrelated_asset_type = cls.create_asset_type(
             slug="unrelated", format=assets_models.AssetType.PNG)
 
     def test_required_asset_types(self):
@@ -87,7 +74,6 @@ class VideoAssetTypeTestCase(VideoBaseTestCase):
         self.assertEqual(set(qs), {self.asset_type})
 
 
-
 class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
     model_admin = admin.VideoAdmin
     model = models.Video
@@ -96,7 +82,7 @@ class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
 
     def transform_to_new(self, data: dict) -> dict:
         self.reset_inline_data(data, self.prefix, None)
-        data[f'{self.prefix}-0-image'] = self.create_uploaded_file()
+        data[f'{self.prefix}-0-image'] = self.create_uploaded_image(self.image)
         return data
 
     def test_validate_required_asset_type(self):
@@ -131,15 +117,15 @@ class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
         data = self.get_form_data_from_response(r)
         url = self.add_url
         data = self.transform_to_new(data)
-        data[f'{self.prefix}-0-image'] = self.create_uploaded_file()
+        data[f'{self.prefix}-0-image'] = self.create_uploaded_image(self.image)
 
         r = self.client.post(url, data=data)
 
         self.assertEqual(r.status_code, 200)
         self.assertIsNotNone(self.get_errors_from_response(r))
+        self.set_allowed_for(self.asset_type, models.Video)
 
-        self.asset_type.allowed_for.set([self.video_content_type])
-        data[f'{self.prefix}-0-image'] = self.create_uploaded_file()
+        data[f'{self.prefix}-0-image'] = self.create_uploaded_image(self.image)
 
         r = self.client.post(url, data=data)
 
@@ -150,7 +136,7 @@ class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
         """ Only one active asset of same asset type is allowed."""
         r = self.client.get(self.change_url)
         data = self.get_form_data_from_response(r)
-        data[f'{self.prefix}-1-image'] = self.create_uploaded_file()
+        data[f'{self.prefix}-1-image'] = self.create_uploaded_image(self.image)
         data[f'{self.prefix}-1-asset_type'] = self.asset_type.id
 
         r = self.client.post(self.change_url, data=data)
@@ -159,7 +145,7 @@ class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
         self.assertTrue(self.get_errors_from_response(r))
 
         data[f'{self.prefix}-0-active'] = False
-        data[f'{self.prefix}-1-image'] = self.create_uploaded_file()
+        data[f'{self.prefix}-1-image'] = self.create_uploaded_image(self.image)
 
         r = self.client.post(self.change_url, data=data)
 
@@ -245,13 +231,13 @@ class AssetValidationTestCase(VideoBaseTestCase):
 
         self.assert_validation_not_passed()
 
-        self.asset.image = self.create_uploaded_file(
+        self.asset.image = self.create_uploaded_image(
             image_format='jpeg', filename='asset.jpg')
 
         self.assert_validation_passed()
 
         # format is checked from image, not filename
-        self.asset.image = self.create_uploaded_file(
+        self.asset.image = self.create_uploaded_image(
             image_format='png', filename='asset.jpg')
 
         self.assert_validation_not_passed()
