@@ -41,7 +41,7 @@ class AssetType(models.Model):
         (PNG, 'PNG')
     )
 
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(verbose_name=_("Slug"), unique=True)
     format = models.CharField(
         verbose_name=_('Image Format'), max_length=4, choices=FORMAT_CHOICES)
     min_width = models.IntegerField(
@@ -56,14 +56,18 @@ class AssetType(models.Model):
         verbose_name=_('Max file size'), default=0)
 
     required_for = models.ManyToManyField(
-        ContentType, blank=True, related_name='required_asset_types',
+        ContentType, blank=True, verbose_name=_('Required for'),
+        related_name='required_asset_types',
         related_query_name='required_asset_types')
     allowed_for = models.ManyToManyField(
-        ContentType, blank=True, related_name='allowed_asset_types',
+        ContentType, blank=True, verbose_name=_('Allowed for'),
+        related_name='allowed_asset_types',
         related_query_name='allowed_asset_types')
 
     class Meta:
         abstract = defaults.ASSET_TYPE_MODEL != 'image_assets.AssetType'
+        verbose_name = _('Asset Type')
+        verbose_name_plural = _('Asset Types')
 
     objects = AssetTypeManager()
 
@@ -82,7 +86,7 @@ class AssetType(models.Model):
         # validate file size
         if (asset_type.max_size and value.size and
                 asset_type.max_size < value.size):
-            msg = _('Image size must be not greater than %s')
+            msg = _('File size must be not greater than %s')
             errors.append(msg % asset_type.max_size)
 
         # open image and validate it's content
@@ -108,8 +112,10 @@ class AssetType(models.Model):
                         errors.append(msg % asset_type.aspect)
                 elif round(delta / asset_type.accuracy) > 1:
                     # round at scale of accuracy
-                    msg = _('Image aspect must be %s ± %s')
-                    args = (asset_type.aspect, asset_type.accuracy)
+                    msg = _('Image aspect must be %(aspect)s ± %(accuracy)s')
+                    args = {
+                        'aspect': asset_type.aspect,
+                        'accuracy': asset_type.accuracy}
                     errors.append(msg % args)
 
         if errors:
@@ -124,13 +130,18 @@ def get_asset_type_model() -> Type[AssetType]:
 class Asset(models.Model):
     class Meta:
         abstract = defaults.ASSET_MODEL != 'image_assets.Asset'
+        verbose_name = _('Asset')
+        verbose_name_plural = _('Assets')
 
-    image = models.ImageField(validators=[AssetType.validate_asset])
-    asset_type = models.ForeignKey(AssetType, models.CASCADE)
-    active = models.BooleanField(default=True)
+    image = models.ImageField(
+        verbose_name=_('Image'), validators=[AssetType.validate_asset])
+    asset_type = models.ForeignKey(
+        AssetType, models.CASCADE, verbose_name=_('Asset Type'))
+    active = models.BooleanField(verbose_name=_('Active'), default=True)
 
-    content_type = models.ForeignKey(ContentType, models.CASCADE)
-    object_id = models.IntegerField()
+    content_type = models.ForeignKey(
+        ContentType, models.CASCADE, verbose_name=_('Content Type'))
+    object_id = models.IntegerField(verbose_name=_('Object ID'))
     related = GenericForeignKey()
 
 
@@ -150,6 +161,8 @@ class DeletedAsset(models.Model):
     class Meta:
         abstract = defaults.DELETED_ASSET_MODEL != 'image_assets.DeletedAsset'
         unique_together = ('content_type', 'object_id')
+        verbose_name = _('Deleted Asset')
+        verbose_name_plural = _('Deleted Assets')
 
 
 def get_deleted_asset_model() -> Type[DeletedAsset]:
