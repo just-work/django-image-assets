@@ -13,7 +13,7 @@ Asset = models.get_asset_model()
 
 try:
     from image_assets.tests.factories import *
-except ImportError:
+except ImportError:  # pragma: no cover
     # factory-boy not installed, no default fuzzy attributes will be available
     AssetTypeFactory = AssetType.objects
     AssetFactory = Asset.objects
