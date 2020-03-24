@@ -10,7 +10,7 @@ class AssetForm(forms.ModelForm):
     """ Asset form with restricted asset_type choices."""
     asset_type = forms.ModelChoiceField(
         queryset=models.get_asset_type_model().objects.distinct('id'),
-        label=_("Asset type")
+        label=_("Asset Type")
     )
 
     def __init__(self, *args, **kwargs):

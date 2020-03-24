@@ -1,0 +1,142 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-03-24 08:30+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n"
+"%100>=11 && n%100<=14)? 2 : 3);\n"
+
+#: image_assets/apps.py:7
+msgid "Image assets"
+msgstr "Ассеты"
+
+#: image_assets/forms.py:13 image_assets/models.py:69
+#: image_assets/models.py:139
+msgid "Asset Type"
+msgstr "Тип ассета"
+
+#: image_assets/forms.py:74
+#, python-format
+msgid "Missing required asset types: %s"
+msgstr "Отсутствуют обязательные типы ассетов: %s"
+
+#: image_assets/forms.py:79
+#, python-format
+msgid "Duplicate active assets for types: %s"
+msgstr "Дублируются активные ассеты следующих типов: %s"
+
+#: image_assets/models.py:44
+msgid "Slug"
+msgstr "Слаг"
+
+#: image_assets/models.py:46
+msgid "Image Format"
+msgstr "Формат изображения"
+
+#: image_assets/models.py:48
+msgid "Min Width"
+msgstr "Минимальная ширина"
+
+#: image_assets/models.py:50
+msgid "Min Height"
+msgstr "Минимальная высота"
+
+#: image_assets/models.py:52
+msgid "Aspect"
+msgstr "Аспект"
+
+#: image_assets/models.py:54
+msgid "Aspect accuracy"
+msgstr "Погрешность аспекта"
+
+#: image_assets/models.py:56
+msgid "Max file size"
+msgstr "Максимальный размер файла"
+
+#: image_assets/models.py:59
+msgid "Required for"
+msgstr "Обязателен для"
+
+#: image_assets/models.py:63
+msgid "Allowed for"
+msgstr "Допустим для"
+
+#: image_assets/models.py:70
+msgid "Asset Types"
+msgstr "Типы ассетов"
+
+#: image_assets/models.py:89
+#, python-format
+msgid "File size must be not greater than %s"
+msgstr "Размер файла должен быть не более %s"
+
+#: image_assets/models.py:96
+#, python-format
+msgid "Image format must be %s"
+msgstr "Формат изображения должен быть %s"
+
+#: image_assets/models.py:100
+#, python-format
+msgid "Image width must be not less than %s"
+msgstr "Ширина изображения должна быть не меньше %s"
+
+#: image_assets/models.py:104
+#, python-format
+msgid "Image height must be not less than %s"
+msgstr "Высота изображения должна быть не меньше %s"
+
+#: image_assets/models.py:111
+#, python-format
+msgid "Image aspect must be %s"
+msgstr "Аспект изображения должен быть %s"
+
+#: image_assets/models.py:115
+#, python-format
+msgid "Image aspect must be %(aspect)s ± %(accuracy)s"
+msgstr "Аспект изображения должен быть %(aspect)s ± %(accuracy)s"
+
+#: image_assets/models.py:133
+msgid "Asset"
+msgstr "Ассет"
+
+#: image_assets/models.py:134
+msgid "Assets"
+msgstr "Ассеты"
+
+#: image_assets/models.py:137
+msgid "Image"
+msgstr "Изображение"
+
+#: image_assets/models.py:140
+msgid "Active"
+msgstr "Активен"
+
+#: image_assets/models.py:143
+msgid "Content Type"
+msgstr "Тип объекта"
+
+#: image_assets/models.py:144
+msgid "Object ID"
+msgstr "ID объекта"
+
+#: image_assets/models.py:164
+msgid "Deleted Asset"
+msgstr "Удаленный ассет"
+
+#: image_assets/models.py:165
+msgid "Deleted Assets"
+msgstr "Удаленные ассеты"
