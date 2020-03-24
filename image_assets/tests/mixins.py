@@ -1,5 +1,5 @@
 import io
-from typing import Tuple, Optional, Literal, Iterable
+from typing import Tuple, Optional, Iterable
 
 from PIL import Image
 from django.contrib.contenttypes.models import ContentType
@@ -34,7 +34,7 @@ class ImageAssetsMixin:
     def create_uploaded_image(cls,
                               image: Optional[Image.Image] = None,
                               dimensions: Tuple[int, int] = (60, 30),
-                              image_format: Literal['png', 'jpeg'] = 'png',
+                              image_format: str = 'png',
                               filename: str = "asset.png",
                               color: str = "red") -> SimpleUploadedFile:
         """ Create valid image for processing in forms."""
