@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Type, List
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -91,35 +91,40 @@ class AssetType(models.Model):
 
         # open image and validate it's content
         with Image.open(value.file) as image:  # type: Image.Image
-            # internal image format
-            if image.format.lower() != asset_type.format:
-                msg = _('Image format must be %s')
-                errors.append(msg % asset_type.format)
-            # image width
-            if image.width and asset_type.min_width > image.width:
-                msg = _('Image width must be not less than %s')
-                errors.append(msg % asset_type.min_width)
-            # image height
-            if image.height and asset_type.min_height > image.height:
-                msg = _('Image height must be not less than %s')
-                errors.append(msg % asset_type.min_height)
-            if image.width and image.height and asset_type.aspect:
-                image_aspect = image.width / image.height
-                delta = image_aspect - asset_type.aspect
-                if asset_type.accuracy == 0:
-                    if image_aspect != asset_type.aspect:
-                        msg = _('Image aspect must be %s')
-                        errors.append(msg % asset_type.aspect)
-                elif round(delta / asset_type.accuracy) > 1:
-                    # round at scale of accuracy
-                    msg = _('Image aspect must be %(aspect)s ± %(accuracy)s')
-                    args = {
-                        'aspect': asset_type.aspect,
-                        'accuracy': asset_type.accuracy}
-                    errors.append(msg % args)
+            cls.validate_image(image=image, asset_type=asset_type,
+                               errors=errors)
 
         if errors:
             raise ValidationError(errors)
+
+    @classmethod
+    def validate_image(cls, image: Image.Image, asset_type, errors: List):
+        # internal image format
+        if image.format.lower() != asset_type.format:
+            msg = _('Image format must be %s')
+            errors.append(msg % asset_type.format)
+        # image width
+        if image.width and asset_type.min_width > image.width:
+            msg = _('Image width must be not less than %s')
+            errors.append(msg % asset_type.min_width)
+        # image height
+        if image.height and asset_type.min_height > image.height:
+            msg = _('Image height must be not less than %s')
+            errors.append(msg % asset_type.min_height)
+        if image.width and image.height and asset_type.aspect:
+            image_aspect = image.width / image.height
+            delta = image_aspect - asset_type.aspect
+            if asset_type.accuracy == 0:
+                if image_aspect != asset_type.aspect:
+                    msg = _('Image aspect must be %s')
+                    errors.append(msg % asset_type.aspect)
+            elif round(delta / asset_type.accuracy) > 1:
+                # round at scale of accuracy
+                msg = _('Image aspect must be %(aspect)s ± %(accuracy)s')
+                args = {
+                    'aspect': asset_type.aspect,
+                    'accuracy': asset_type.accuracy}
+                errors.append(msg % args)
 
 
 def get_asset_type_model() -> Type[AssetType]:
