@@ -298,3 +298,11 @@ class AssetValidationTestCase(VideoBaseTestCase):
         self.asset_type.accuracy = 0.01
 
         self.assert_validation_passed()
+
+        self.asset_type.aspect = -1.8
+
+        self.assert_validation_not_passed()
+
+        self.asset_type.accuracy = 0.2
+
+        self.assert_validation_passed()
