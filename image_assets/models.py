@@ -1,14 +1,15 @@
 from typing import Type, List
 
+from PIL import Image
+from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.apps import apps
 from django.db.models.base import ModelBase
 from django.db.models.fields.files import ImageFieldFile
 from django.utils.translation import gettext_lazy as _
-from PIL import Image
+
 from image_assets import defaults
 
 
@@ -92,11 +93,13 @@ class AssetType(models.Model):
         # open image and validate it's content
         try:
             image = cls.open_file(value.file)
-            cls.validate_image(image=image, asset_type=asset_type,
-                               errors=errors)
-            image.close()
+            errors = cls.validate_image(image=image,
+                                        asset_type=asset_type,
+                                        errors=errors)
         except FileNotFoundError:
             errors.append('Failed to open the file')
+        finally:
+            image.close()
 
         if errors:
             raise ValidationError(errors)
@@ -134,6 +137,7 @@ class AssetType(models.Model):
                     'aspect': asset_type.aspect,
                     'accuracy': asset_type.accuracy}
                 errors.append(msg % args)
+        return errors
 
 
 def get_asset_type_model() -> Type[AssetType]:
