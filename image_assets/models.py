@@ -90,12 +90,21 @@ class AssetType(models.Model):
             errors.append(msg % asset_type.max_size)
 
         # open image and validate it's content
-        with Image.open(value.file) as image:  # type: Image.Image
+        try:
+            image = cls.open_file(value.file)
             cls.validate_image(image=image, asset_type=asset_type,
                                errors=errors)
+            image.close()
+        except FileNotFoundError:
+            errors.append('Failed to open the file')
 
         if errors:
             raise ValidationError(errors)
+
+    @classmethod
+    def open_file(self, file):
+        file_content = Image.open(file)
+        return file_content
 
     @classmethod
     def validate_image(cls, image: Image.Image, asset_type, errors: List):
