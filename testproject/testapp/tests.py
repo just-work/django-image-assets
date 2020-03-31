@@ -299,10 +299,16 @@ class AssetValidationTestCase(VideoBaseTestCase):
 
         self.assert_validation_passed()
 
-        self.asset_type.aspect = -1.8
+    def test_validate_aspect_with_negative_delta(self):
+        """
+        Asset aspect ratio must correspond asset type aspect.
+        """
+        self.asset_type.aspect = 2.0
+        self.asset.image = self.create_uploaded_image(
+            image_format='png', filename='asset.png', dimensions=(30, 60))
 
         self.assert_validation_not_passed()
 
-        self.asset_type.accuracy = 0.2
+        self.asset_type.aspect = 0.5
 
         self.assert_validation_passed()
