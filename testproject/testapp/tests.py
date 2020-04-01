@@ -199,12 +199,11 @@ class AssetValidationTestCase(VideoBaseTestCase):
     """ Checks image validation for asset type."""
 
     def assert_validation_not_passed(self):
-        try:
+        with self.assertRaises(ValidationError) as e:
             self.asset.full_clean()
-        except ValidationError as e:
-            invalid_keys = set(e.error_dict)
-            expected = {'asset_type', 'content_type', 'object_id'}
-            self.assertTrue(invalid_keys - expected)
+        invalid_keys = set(e.exception.error_dict)
+        expected = {'asset_type', 'content_type', 'object_id'}
+        self.assertTrue(invalid_keys - expected)
 
     def assert_validation_passed(self):
         try:
