@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Type, List
 
 from PIL import Image
 from django.apps import apps
@@ -90,6 +90,7 @@ class AssetType(models.Model):
             msg = _('File size must be not greater than %s')
             errors.append(msg % asset_type.max_size)
 
+        # open image and validate it's content
         validation_errors = cls.open_and_validate_file(value.file, asset_type)
         errors.extend(validation_errors)
 
@@ -97,7 +98,7 @@ class AssetType(models.Model):
             raise ValidationError(errors)
 
     @classmethod
-    def open_and_validate_file(self, file, asset_type):
+    def open_and_validate_file(self, file, asset_type) -> List:
         errors = []
         try:
             with Image.open(file) as image:  # type: Image.Image
@@ -109,9 +110,9 @@ class AssetType(models.Model):
         return errors
 
     @classmethod
-    def validate_image(cls, image: Image.Image, asset_type):
-        # internal image format
+    def validate_image(cls, image: Image.Image, asset_type) -> List:
         errors = []
+        # internal image format
         if image.format.lower() != asset_type.format:
             msg = _('Image format must be %s')
             errors.append(msg % asset_type.format)
