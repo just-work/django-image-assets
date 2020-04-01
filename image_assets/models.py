@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from typing import Type, List
 
 from PIL import Image
@@ -91,41 +92,41 @@ class AssetType(models.Model):
             errors.append(msg % asset_type.max_size)
 
         # open image and validate it's content
-        validation_errors = cls.open_and_validate_file(value.file, asset_type)
-        errors.extend(validation_errors)
+        with cls.open_file(value.file) as file:
+            validation_errors = cls.validate_file(file, asset_type)
+            errors.extend(validation_errors)
 
         if errors:
             raise ValidationError(errors)
 
-    @classmethod
-    def open_and_validate_file(self, file, asset_type) -> List:
-        errors = []
+    @contextmanager
+    def open_file(file):
+        opened = None
         try:
-            with Image.open(file) as image:  # type: Image.Image
-                validation_errors = self.validate_image(image=image,
-                                                        asset_type=asset_type)
-                errors.extend(validation_errors)
-        except Exception:
-            errors.append('Can`t open and validate file')
-        return errors
+            file_content = Image.open(file)
+            opened = True
+            yield file_content
+        finally:
+            if opened:
+                file_content.close()
 
     @classmethod
-    def validate_image(cls, image: Image.Image, asset_type) -> List:
+    def validate_file(cls, file: Image.Image, asset_type) -> List:
         errors = []
         # internal image format
-        if image.format.lower() != asset_type.format:
+        if file.format.lower() != asset_type.format:
             msg = _('Image format must be %s')
             errors.append(msg % asset_type.format)
         # image width
-        if image.width and asset_type.min_width > image.width:
+        if file.width and asset_type.min_width > file.width:
             msg = _('Image width must be not less than %s')
             errors.append(msg % asset_type.min_width)
         # image height
-        if image.height and asset_type.min_height > image.height:
+        if file.height and asset_type.min_height > file.height:
             msg = _('Image height must be not less than %s')
             errors.append(msg % asset_type.min_height)
-        if image.width and image.height and asset_type.aspect:
-            image_aspect = image.width / image.height
+        if file.width and file.height and asset_type.aspect:
+            image_aspect = file.width / file.height
             delta = abs(image_aspect - asset_type.aspect)
             if asset_type.accuracy == 0:
                 if image_aspect != asset_type.aspect:
@@ -136,7 +137,8 @@ class AssetType(models.Model):
                 msg = _('Image aspect must be %(aspect)s ± %(accuracy)s')
                 args = {
                     'aspect': asset_type.aspect,
-                    'accuracy': asset_type.accuracy}
+                    'accuracy': asset_type.accuracy
+                }
                 errors.append(msg % args)
         return errors
 
