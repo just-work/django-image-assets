@@ -105,7 +105,7 @@ class AssetType(models.Model):
                 errors.append(msg % asset_type.min_height)
             if image.width and image.height and asset_type.aspect:
                 image_aspect = image.width / image.height
-                delta = image_aspect - asset_type.aspect
+                delta = abs(image_aspect - asset_type.aspect)
                 if asset_type.accuracy == 0:
                     if image_aspect != asset_type.aspect:
                         msg = _('Image aspect must be %s')
