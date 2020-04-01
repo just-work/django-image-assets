@@ -1,4 +1,4 @@
-from typing import Type, List
+from typing import Type
 
 from PIL import Image
 from django.apps import apps
@@ -90,28 +90,28 @@ class AssetType(models.Model):
             msg = _('File size must be not greater than %s')
             errors.append(msg % asset_type.max_size)
 
-        # open image and validate it's content
-        try:
-            image = cls.open_file(value.file)
-            errors = cls.validate_image(image=image,
-                                        asset_type=asset_type,
-                                        errors=errors)
-        except FileNotFoundError:
-            errors.append('Failed to open the file')
-        finally:
-            image.close()
+        validation_errors = cls.open_and_validate_file(value.file, asset_type)
+        errors.extend(validation_errors)
 
         if errors:
             raise ValidationError(errors)
 
     @classmethod
-    def open_file(self, file):
-        file_content = Image.open(file)
-        return file_content
+    def open_and_validate_file(self, file, asset_type):
+        errors = []
+        try:
+            with Image.open(file) as image:  # type: Image.Image
+                validation_errors = self.validate_image(image=image,
+                                                        asset_type=asset_type)
+                errors.extend(validation_errors)
+        except Exception:
+            errors.append('Can`t open and validate file')
+        return errors
 
     @classmethod
-    def validate_image(cls, image: Image.Image, asset_type, errors: List):
+    def validate_image(cls, image: Image.Image, asset_type):
         # internal image format
+        errors = []
         if image.format.lower() != asset_type.format:
             msg = _('Image format must be %s')
             errors.append(msg % asset_type.format)
@@ -125,7 +125,7 @@ class AssetType(models.Model):
             errors.append(msg % asset_type.min_height)
         if image.width and image.height and asset_type.aspect:
             image_aspect = image.width / image.height
-            delta = image_aspect - asset_type.aspect
+            delta = abs(image_aspect - asset_type.aspect)
             if asset_type.accuracy == 0:
                 if image_aspect != asset_type.aspect:
                     msg = _('Image aspect must be %s')
