@@ -172,6 +172,16 @@ class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
         self.assertEqual(2, self.video.assets.filter(active=False).count())
 
 
+class AssetModelTestCase(VideoBaseTestCase):
+    """ Asset model test case"""
+
+    def test_str(self):
+        """ Check __str__ method."""
+        self.assertIsInstance(self.asset.__str__(), str)
+        empty = assets_models.get_asset_model()()
+        self.assertIsInstance(empty.__str__(), str)
+
+
 class DeletedAssetModelTestCase(VideoBaseTestCase):
     """ Asset deletion handling test case."""
 
@@ -184,6 +194,12 @@ class DeletedAssetModelTestCase(VideoBaseTestCase):
     def tearDown(self):
         super().tearDown()
         self.delete_patcher.stop()
+
+    def test_str(self):
+        """ Check __str__ method."""
+        self.assertIsInstance(self.asset.__str__(), str)
+        empty = assets_models.get_asset_model()()
+        self.assertIsInstance(empty.__str__(), str)
 
     def test_delete_asset(self):
         """

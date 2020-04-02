@@ -144,6 +144,17 @@ def get_asset_type_model() -> Type[AssetType]:
 
 
 class Asset(models.Model):
+    image = models.ImageField(
+        verbose_name=_('Image'), validators=[AssetType.validate_asset])
+    asset_type = models.ForeignKey(
+        AssetType, models.CASCADE, verbose_name=_('Asset Type'))
+    active = models.BooleanField(verbose_name=_('Active'), default=True)
+
+    content_type = models.ForeignKey(
+        ContentType, models.CASCADE, verbose_name=_('Content Type'))
+    object_id = models.IntegerField(verbose_name=_('Object ID'))
+    related = GenericForeignKey()
+
     class Meta:
         abstract = defaults.ASSET_MODEL != 'image_assets.Asset'
         verbose_name = _('Asset')
@@ -155,16 +166,13 @@ class Asset(models.Model):
                 condition=models.Q(active=True)),
         )
 
-    image = models.ImageField(
-        verbose_name=_('Image'), validators=[AssetType.validate_asset])
-    asset_type = models.ForeignKey(
-        AssetType, models.CASCADE, verbose_name=_('Asset Type'))
-    active = models.BooleanField(verbose_name=_('Active'), default=True)
-
-    content_type = models.ForeignKey(
-        ContentType, models.CASCADE, verbose_name=_('Content Type'))
-    object_id = models.IntegerField(verbose_name=_('Object ID'))
-    related = GenericForeignKey()
+    def __str__(self):
+        if self.content_type_id is None:
+            return str(self._meta.verbose_name)
+        ct = ContentType.objects.get_for_id(self.content_type_id)
+        model = ct.model_class()
+        # noinspection PyProtectedMember
+        return f'{model._meta.verbose_name} #{self.object_id}'
 
 
 def get_asset_model() -> Type[Asset]:
@@ -189,7 +197,7 @@ class DeletedAsset(models.Model):
 
     def __str__(self):
         if self.content_type_id is None:
-            return 'DeletedAsset'
+            return str(self._meta.verbose_name)
         ct = ContentType.objects.get_for_id(self.content_type_id)
         model = ct.model_class()
         # noinspection PyProtectedMember
