@@ -197,8 +197,11 @@ class DeletedAssetModelTestCase(VideoBaseTestCase):
 
     def test_str(self):
         """ Check __str__ method."""
-        self.assertIsInstance(self.asset.__str__(), str)
-        empty = assets_models.get_asset_model()()
+        self.asset.delete()
+        deleted_model = assets_models.get_deleted_asset_model()
+        deleted = deleted_model.objects.last()
+        self.assertIsInstance(deleted.__str__(), str)
+        empty = deleted_model()
         self.assertIsInstance(empty.__str__(), str)
 
     def test_delete_asset(self):
