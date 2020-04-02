@@ -187,6 +187,26 @@ class DeletedAsset(models.Model):
         verbose_name = _('Deleted Asset')
         verbose_name_plural = _('Deleted Assets')
 
+    def __str__(self):
+        if self.content_type_id is None:
+            return 'DeletedAsset'
+        ct = ContentType.objects.get_for_id(self.content_type_id)
+        model = ct.model_class()
+        # noinspection PyProtectedMember
+        return f'{model._meta.verbose_name} #{self.object_id}'
+
+    def recover(self):
+        """ Восстанавливает удаленный ассет."""
+        asset = self.asset_type.asset_set.create(
+            content_type_id=self.content_type_id,
+            object_id=self.object_id,
+            image=self.image)
+        qs = DeletedAsset.objects.filter(pk=self.pk)
+        # skip sending pre_delete/post_delete signals to prevent file removal.
+        # noinspection PyProtectedMember
+        qs._raw_delete(qs.db)
+        return asset
+
 
 def get_deleted_asset_model() -> Type[DeletedAsset]:
     app_label, model_name = defaults.DELETED_ASSET_MODEL.split('.')

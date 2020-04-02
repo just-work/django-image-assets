@@ -222,6 +222,28 @@ class DeletedAssetModelTestCase(VideoBaseTestCase):
             asset_type=self.asset.asset_type)
         self.assertEqual(2, deleted.count())
 
+    def test_recover_deleted_asset(self):
+        """
+        Deleted asset is recovered as inactive asset with same image.
+        """
+        self.asset.delete()
+        deleted = assets_models.DeletedAsset.objects.get()
+        qs = assets_models.DeletedAsset.objects.filter(pk=deleted.pk)
+        filename = deleted.image.name
+
+        deleted.recover()
+
+        asset = assets_models.Asset.objects.order_by('id').last()
+        self.assert_object_fields(
+            asset,
+            content_type=self.asset.content_type,
+            object_id=self.asset.object_id,
+            asset_type=self.asset.asset_type,
+        )
+        self.assertEqual(asset.image.name, filename)
+        self.delete_mock.assert_not_called()
+        self.assertFalse(qs.exists())
+
 
 class AssetValidationTestCase(VideoBaseTestCase):
     """ Checks image validation for asset type."""

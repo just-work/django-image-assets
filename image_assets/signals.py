@@ -25,4 +25,4 @@ def delete_asset_file_for_deleted_asset(
     """
     When deleted asset is deleted from db, it's file is purged from storage.
     """
-    instance.image.delete()
+    instance.image.delete(save=False)
