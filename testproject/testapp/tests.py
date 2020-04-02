@@ -113,41 +113,36 @@ class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
     def test_validate_allowed_asset_type(self):
         """ If asset type is not allowed, object will not be saved."""
         self.asset_type.required_for.clear()
-        r = self.client.get(self.change_url)
-        data = self.get_form_data_from_response(r)
-        url = self.add_url
-        data = self.transform_to_new(data)
-        data[f'{self.prefix}-0-image'] = self.create_uploaded_image(self.image)
-
-        r = self.client.post(url, data=data)
+        kw = {f'{self.prefix}-0-image': self.create_uploaded_image(self.image)}
+        r = self.post_changeform(fields=kw)
 
         self.assertEqual(r.status_code, 200)
         self.assertIsNotNone(self.get_errors_from_response(r))
         self.set_allowed_for(self.asset_type, models.Video)
 
-        data[f'{self.prefix}-0-image'] = self.create_uploaded_image(self.image)
-
-        r = self.client.post(url, data=data)
+        kw = {f'{self.prefix}-0-image': self.create_uploaded_image(self.image)}
+        r = self.post_changeform(fields=kw)
 
         self.assertFalse(self.get_errors_from_response(r))
         self.assertEqual(r.status_code, 302)
 
     def test_maintain_single_active_asset(self):
         """ Only one active asset of same asset type is allowed."""
-        r = self.client.get(self.change_url)
-        data = self.get_form_data_from_response(r)
-        data[f'{self.prefix}-1-image'] = self.create_uploaded_image(self.image)
-        data[f'{self.prefix}-1-asset_type'] = self.asset_type.id
-
-        r = self.client.post(self.change_url, data=data)
+        kw = {
+            f'{self.prefix}-1-image': self.create_uploaded_image(self.image),
+            f'{self.prefix}-1-asset_type': self.asset_type.id,
+        }
+        r = self.post_changeform(fields=kw)
 
         self.assertEqual(r.status_code, 200)
         self.assertTrue(self.get_errors_from_response(r))
 
-        data[f'{self.prefix}-0-active'] = False
-        data[f'{self.prefix}-1-image'] = self.create_uploaded_image(self.image)
-
-        r = self.client.post(self.change_url, data=data)
+        kw = {
+            f'{self.prefix}-0-active': False,
+            f'{self.prefix}-1-image': self.create_uploaded_image(self.image),
+            f'{self.prefix}-1-asset_type': self.asset_type.id,
+        }
+        r = self.post_changeform(fields=kw)
 
         self.assertFalse(self.get_errors_from_response(r))
         self.assertEqual(r.status_code, 302)
@@ -156,6 +151,25 @@ class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
             active=False)
         asset = self.video.assets.last()
         self.assertTrue(asset.active)
+
+    def test_multiple_inactive_assets_allowed(self):
+        """
+        There may be multiple inactive assets of same type for same object.
+        :return:
+        """
+        kw = {
+            f'{self.prefix}-1-active': False,
+            f'{self.prefix}-1-image': self.create_uploaded_image(self.image),
+            f'{self.prefix}-1-asset_type': self.asset_type.id,
+            f'{self.prefix}-2-active': False,
+            f'{self.prefix}-2-image': self.create_uploaded_image(self.image),
+            f'{self.prefix}-2-asset_type': self.asset_type.id,
+        }
+        r = self.post_changeform(fields=kw)
+
+        self.assertFalse(self.get_errors_from_response(r))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(2, self.video.assets.filter(active=False).count())
 
 
 class DeletedAssetModelTestCase(VideoBaseTestCase):
@@ -193,6 +207,20 @@ class DeletedAssetModelTestCase(VideoBaseTestCase):
         deleted.delete()
 
         self.delete_mock.assert_called_once_with(filename)
+
+    def test_delete_multiple_assets_for_same_object(self):
+        """
+        There may be multiple deleted assets of same type for same object.
+        """
+        self.asset.delete()
+        asset = self.create_asset(self.asset.asset_type, self.asset.related)
+        asset.delete()
+
+        deleted = assets_models.DeletedAsset.objects.filter(
+            content_type=self.asset.content_type,
+            object_id=self.asset.object_id,
+            asset_type=self.asset.asset_type)
+        self.assertEqual(2, deleted.count())
 
 
 class AssetValidationTestCase(VideoBaseTestCase):
