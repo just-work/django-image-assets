@@ -99,8 +99,9 @@ class AssetType(models.Model):
         if errors:
             raise ValidationError(errors)
 
+    @classmethod
     @contextmanager
-    def open_file(file):
+    def open_file(cls, file):
         with Image.open(file) as file_content:
             yield file_content
 
@@ -172,11 +173,13 @@ def get_asset_model() -> Type[Asset]:
 
 
 class DeletedAsset(models.Model):
-    image = models.ImageField()
-    asset_type = models.ForeignKey(defaults.ASSET_TYPE_MODEL, models.CASCADE)
+    image = models.ImageField(verbose_name=_('Image'))
+    asset_type = models.ForeignKey(
+        defaults.ASSET_TYPE_MODEL, models.CASCADE, verbose_name=_('Asset Type'))
 
-    content_type = models.ForeignKey(ContentType, models.CASCADE)
-    object_id = models.IntegerField()
+    content_type = models.ForeignKey(
+        ContentType, models.CASCADE, verbose_name=_('Content Type'))
+    object_id = models.IntegerField(verbose_name=_('Object ID'))
     related = GenericForeignKey()
 
     class Meta:
