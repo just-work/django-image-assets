@@ -101,14 +101,8 @@ class AssetType(models.Model):
 
     @contextmanager
     def open_file(file):
-        file_content = None
-        try:
-            file_content = Image.open(file)
-            file_content.load()
+        with Image.open(file) as file_content:
             yield file_content
-        finally:
-            if file_content:
-                file_content.close()
 
     @classmethod
     def validate_file(cls, file: Image.Image, asset_type) -> List:
