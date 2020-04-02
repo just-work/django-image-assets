@@ -101,13 +101,13 @@ class AssetType(models.Model):
 
     @contextmanager
     def open_file(file):
-        opened = None
+        file_content = None
         try:
             file_content = Image.open(file)
-            opened = True
+            file_content.load()
             yield file_content
         finally:
-            if opened:
+            if file_content:
                 file_content.close()
 
     @classmethod
