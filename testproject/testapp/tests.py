@@ -239,6 +239,7 @@ class DeletedAssetModelTestCase(VideoBaseTestCase):
             content_type=self.asset.content_type,
             object_id=self.asset.object_id,
             asset_type=self.asset.asset_type,
+            active=False,
         )
         self.assertEqual(asset.image.name, filename)
         self.delete_mock.assert_not_called()

@@ -197,10 +197,12 @@ class DeletedAsset(models.Model):
 
     def recover(self):
         """ Восстанавливает удаленный ассет."""
-        asset = self.asset_type.asset_set.create(
+        asset = get_asset_model().objects.create(
+            asset_type_id=self.asset_type_id,
             content_type_id=self.content_type_id,
             object_id=self.object_id,
-            image=self.image)
+            image=self.image,
+            active=False)
         qs = DeletedAsset.objects.filter(pk=self.pk)
         # skip sending pre_delete/post_delete signals to prevent file removal.
         # noinspection PyProtectedMember
