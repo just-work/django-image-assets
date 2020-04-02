@@ -147,6 +147,12 @@ class Asset(models.Model):
         abstract = defaults.ASSET_MODEL != 'image_assets.Asset'
         verbose_name = _('Asset')
         verbose_name_plural = _('Assets')
+        constraints = (
+            models.UniqueConstraint(
+                fields=('asset_type', 'content_type', 'object_id'),
+                name='unique_active_asset',
+                condition=models.Q(active=True)),
+        )
 
     image = models.ImageField(
         verbose_name=_('Image'), validators=[AssetType.validate_asset])
@@ -175,7 +181,6 @@ class DeletedAsset(models.Model):
 
     class Meta:
         abstract = defaults.DELETED_ASSET_MODEL != 'image_assets.DeletedAsset'
-        unique_together = ('content_type', 'object_id')
         verbose_name = _('Deleted Asset')
         verbose_name_plural = _('Deleted Assets')
 
