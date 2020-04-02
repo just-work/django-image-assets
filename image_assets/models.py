@@ -1,14 +1,16 @@
-from typing import Type
+from contextlib import contextmanager
+from typing import Type, List
 
+from PIL import Image
+from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.apps import apps
 from django.db.models.base import ModelBase
 from django.db.models.fields.files import ImageFieldFile
 from django.utils.translation import gettext_lazy as _
-from PIL import Image
+
 from image_assets import defaults
 
 
@@ -90,36 +92,49 @@ class AssetType(models.Model):
             errors.append(msg % asset_type.max_size)
 
         # open image and validate it's content
-        with Image.open(value.file) as image:  # type: Image.Image
-            # internal image format
-            if image.format.lower() != asset_type.format:
-                msg = _('Image format must be %s')
-                errors.append(msg % asset_type.format)
-            # image width
-            if image.width and asset_type.min_width > image.width:
-                msg = _('Image width must be not less than %s')
-                errors.append(msg % asset_type.min_width)
-            # image height
-            if image.height and asset_type.min_height > image.height:
-                msg = _('Image height must be not less than %s')
-                errors.append(msg % asset_type.min_height)
-            if image.width and image.height and asset_type.aspect:
-                image_aspect = image.width / image.height
-                delta = abs(image_aspect - asset_type.aspect)
-                if asset_type.accuracy == 0:
-                    if image_aspect != asset_type.aspect:
-                        msg = _('Image aspect must be %s')
-                        errors.append(msg % asset_type.aspect)
-                elif round(delta / asset_type.accuracy) > 1:
-                    # round at scale of accuracy
-                    msg = _('Image aspect must be %(aspect)s ± %(accuracy)s')
-                    args = {
-                        'aspect': asset_type.aspect,
-                        'accuracy': asset_type.accuracy}
-                    errors.append(msg % args)
+        with cls.open_file(value.file) as file:
+            validation_errors = cls.validate_file(file, asset_type)
+            errors.extend(validation_errors)
 
         if errors:
             raise ValidationError(errors)
+
+    @contextmanager
+    def open_file(file):
+        with Image.open(file) as file_content:
+            yield file_content
+
+    @classmethod
+    def validate_file(cls, file: Image.Image, asset_type) -> List:
+        errors = []
+        # internal image format
+        if file.format.lower() != asset_type.format:
+            msg = _('Image format must be %s')
+            errors.append(msg % asset_type.format)
+        # image width
+        if file.width and asset_type.min_width > file.width:
+            msg = _('Image width must be not less than %s')
+            errors.append(msg % asset_type.min_width)
+        # image height
+        if file.height and asset_type.min_height > file.height:
+            msg = _('Image height must be not less than %s')
+            errors.append(msg % asset_type.min_height)
+        if file.width and file.height and asset_type.aspect:
+            image_aspect = file.width / file.height
+            delta = abs(image_aspect - asset_type.aspect)
+            if asset_type.accuracy == 0:
+                if image_aspect != asset_type.aspect:
+                    msg = _('Image aspect must be %s')
+                    errors.append(msg % asset_type.aspect)
+            elif round(delta / asset_type.accuracy) > 1:
+                # round at scale of accuracy
+                msg = _('Image aspect must be %(aspect)s ± %(accuracy)s')
+                args = {
+                    'aspect': asset_type.aspect,
+                    'accuracy': asset_type.accuracy
+                }
+                errors.append(msg % args)
+        return errors
 
 
 def get_asset_type_model() -> Type[AssetType]:
