@@ -172,6 +172,16 @@ class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
         self.assertEqual(2, self.video.assets.filter(active=False).count())
 
 
+class AssetModelTestCase(VideoBaseTestCase):
+    """ Asset model test case"""
+
+    def test_str(self):
+        """ Check __str__ method."""
+        self.assertIsInstance(self.asset.__str__(), str)
+        empty = assets_models.get_asset_model()()
+        self.assertIsInstance(empty.__str__(), str)
+
+
 class DeletedAssetModelTestCase(VideoBaseTestCase):
     """ Asset deletion handling test case."""
 
@@ -184,6 +194,15 @@ class DeletedAssetModelTestCase(VideoBaseTestCase):
     def tearDown(self):
         super().tearDown()
         self.delete_patcher.stop()
+
+    def test_str(self):
+        """ Check __str__ method."""
+        self.asset.delete()
+        deleted_model = assets_models.get_deleted_asset_model()
+        deleted = deleted_model.objects.last()
+        self.assertIsInstance(deleted.__str__(), str)
+        empty = deleted_model()
+        self.assertIsInstance(empty.__str__(), str)
 
     def test_delete_asset(self):
         """
@@ -221,6 +240,29 @@ class DeletedAssetModelTestCase(VideoBaseTestCase):
             object_id=self.asset.object_id,
             asset_type=self.asset.asset_type)
         self.assertEqual(2, deleted.count())
+
+    def test_recover_deleted_asset(self):
+        """
+        Deleted asset is recovered as inactive asset with same image.
+        """
+        self.asset.delete()
+        deleted = assets_models.DeletedAsset.objects.get()
+        qs = assets_models.DeletedAsset.objects.filter(pk=deleted.pk)
+        filename = deleted.image.name
+
+        deleted.recover()
+
+        asset = assets_models.Asset.objects.order_by('id').last()
+        self.assert_object_fields(
+            asset,
+            content_type=self.asset.content_type,
+            object_id=self.asset.object_id,
+            asset_type=self.asset.asset_type,
+            active=False,
+        )
+        self.assertEqual(asset.image.name, filename)
+        self.delete_mock.assert_not_called()
+        self.assertFalse(qs.exists())
 
 
 class AssetValidationTestCase(VideoBaseTestCase):

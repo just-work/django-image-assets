@@ -144,6 +144,17 @@ def get_asset_type_model() -> Type[AssetType]:
 
 
 class Asset(models.Model):
+    image = models.ImageField(
+        verbose_name=_('Image'), validators=[AssetType.validate_asset])
+    asset_type = models.ForeignKey(
+        AssetType, models.CASCADE, verbose_name=_('Asset Type'))
+    active = models.BooleanField(verbose_name=_('Active'), default=True)
+
+    content_type = models.ForeignKey(
+        ContentType, models.CASCADE, verbose_name=_('Content Type'))
+    object_id = models.IntegerField(verbose_name=_('Object ID'))
+    related = GenericForeignKey()
+
     class Meta:
         abstract = defaults.ASSET_MODEL != 'image_assets.Asset'
         verbose_name = _('Asset')
@@ -155,16 +166,13 @@ class Asset(models.Model):
                 condition=models.Q(active=True)),
         )
 
-    image = models.ImageField(
-        verbose_name=_('Image'), validators=[AssetType.validate_asset])
-    asset_type = models.ForeignKey(
-        AssetType, models.CASCADE, verbose_name=_('Asset Type'))
-    active = models.BooleanField(verbose_name=_('Active'), default=True)
-
-    content_type = models.ForeignKey(
-        ContentType, models.CASCADE, verbose_name=_('Content Type'))
-    object_id = models.IntegerField(verbose_name=_('Object ID'))
-    related = GenericForeignKey()
+    def __str__(self):
+        if self.content_type_id is None:
+            return str(self._meta.verbose_name)
+        ct = ContentType.objects.get_for_id(self.content_type_id)
+        model = ct.model_class()
+        # noinspection PyProtectedMember
+        return f'{model._meta.verbose_name} #{self.object_id}'
 
 
 def get_asset_model() -> Type[Asset]:
@@ -186,6 +194,28 @@ class DeletedAsset(models.Model):
         abstract = defaults.DELETED_ASSET_MODEL != 'image_assets.DeletedAsset'
         verbose_name = _('Deleted Asset')
         verbose_name_plural = _('Deleted Assets')
+
+    def __str__(self):
+        if self.content_type_id is None:
+            return str(self._meta.verbose_name)
+        ct = ContentType.objects.get_for_id(self.content_type_id)
+        model = ct.model_class()
+        # noinspection PyProtectedMember
+        return f'{model._meta.verbose_name} #{self.object_id}'
+
+    def recover(self):
+        """ Восстанавливает удаленный ассет."""
+        asset = get_asset_model().objects.create(
+            asset_type_id=self.asset_type_id,
+            content_type_id=self.content_type_id,
+            object_id=self.object_id,
+            image=self.image,
+            active=False)
+        qs = DeletedAsset.objects.filter(pk=self.pk)
+        # skip sending pre_delete/post_delete signals to prevent file removal.
+        # noinspection PyProtectedMember
+        qs._raw_delete(qs.db)
+        return asset
 
 
 def get_deleted_asset_model() -> Type[DeletedAsset]:
