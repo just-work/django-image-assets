@@ -3,7 +3,7 @@ django-image-assets
 
 Django application for image assets management.
 
-[![Build Status](https://travis-ci.org/just-work/django-image-assets.svg?branch=master)](https://travis-ci.org/just-work/django-image-assets)
+[![Build Status](https://github.com/just-work/django-testing-utils/workflows/build/badge.svg?branch=master)](https://github.com/just-work/django-testing-utils/actions?query=workflow%3Abuild)
 [![codecov](https://codecov.io/gh/just-work/django-image-assets/branch/master/graph/badge.svg)](https://codecov.io/gh/just-work/django-image-assets)
 [![PyPI version](https://badge.fury.io/py/django-image-assets.svg)](https://badge.fury.io/py/django-image-assets)
 
