@@ -211,7 +211,7 @@ class DeletedAsset(models.Model):
             object_id=self.object_id,
             image=self.image,
             active=False)
-        qs = DeletedAsset.objects.filter(pk=self.pk)
+        qs = get_deleted_asset_model().objects.filter(pk=self.pk)
         # skip sending pre_delete/post_delete signals to prevent file removal.
         # noinspection PyProtectedMember
         qs._raw_delete(qs.db)
