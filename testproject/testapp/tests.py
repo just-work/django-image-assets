@@ -47,6 +47,10 @@ class VideoAssetTypeTestCase(VideoBaseTestCase):
 
     def test_required_asset_types(self):
         """ Check fetching required asset types for model or instance."""
+        qs = assets_models.AssetType.objects.get_for_model(None)
+        # Return all asset types for unknown object
+        self.assertEqual(qs.count(), assets_models.AssetType.objects.count())
+
         qs = assets_models.AssetType.objects.get_required(self.video)
         # Video has active asset of required asset type
         self.assertEqual(qs.count(), 0)
