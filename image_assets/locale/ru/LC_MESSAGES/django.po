@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-04-02 09:43+0000\n"
+"POT-Creation-Date: 2020-04-06 13:24+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -24,8 +24,8 @@ msgstr ""
 msgid "Image assets"
 msgstr "Ассеты"
 
-#: image_assets/forms.py:13 image_assets/models.py:71
-#: image_assets/models.py:161 image_assets/models.py:178
+#: image_assets/forms.py:13 image_assets/models.py:70
+#: image_assets/models.py:155 image_assets/models.py:191
 msgid "Asset Type"
 msgstr "Тип ассета"
 
@@ -39,54 +39,56 @@ msgstr "Отсутствуют обязательные типы ассетов:
 msgid "Duplicate active assets for types: %s"
 msgstr "Дублируются активные ассеты следующих типов: %s"
 
-#: image_assets/models.py:46
+#: image_assets/models.py:45
 msgid "Slug"
 msgstr "Слаг"
 
-#: image_assets/models.py:48
-msgid "Image Format"
+#: image_assets/models.py:46
+#, fuzzy
+#| msgid "Image Format"
+msgid "Formats"
 msgstr "Формат изображения"
 
-#: image_assets/models.py:50
+#: image_assets/models.py:49
 msgid "Min Width"
 msgstr "Минимальная ширина"
 
-#: image_assets/models.py:52
+#: image_assets/models.py:51
 msgid "Min Height"
 msgstr "Минимальная высота"
 
-#: image_assets/models.py:54
+#: image_assets/models.py:53
 msgid "Aspect"
 msgstr "Аспект"
 
-#: image_assets/models.py:56
+#: image_assets/models.py:55
 msgid "Aspect accuracy"
 msgstr "Погрешность аспекта"
 
-#: image_assets/models.py:58
+#: image_assets/models.py:57
 msgid "Max file size"
 msgstr "Максимальный размер файла"
 
-#: image_assets/models.py:61
+#: image_assets/models.py:60
 msgid "Required for"
 msgstr "Обязателен для"
 
-#: image_assets/models.py:65
+#: image_assets/models.py:64
 msgid "Allowed for"
 msgstr "Допустим для"
 
-#: image_assets/models.py:72
+#: image_assets/models.py:71
 msgid "Asset Types"
 msgstr "Типы ассетов"
 
-#: image_assets/models.py:91
+#: image_assets/models.py:97
 #, python-format
 msgid "File size must be not greater than %s"
 msgstr "Размер файла должен быть не более %s"
 
-#: image_assets/models.py:113
+#: image_assets/models.py:106
 #, python-format
-msgid "Image format must be %s"
+msgid "Image format must be one of %s"
 msgstr "Формат изображения должен быть %s"
 
 #: image_assets/models.py:117
@@ -99,44 +101,44 @@ msgstr "Ширина изображения должна быть не мень�
 msgid "Image height must be not less than %s"
 msgstr "Высота изображения должна быть не меньше %s"
 
-#: image_assets/models.py:128
+#: image_assets/models.py:133
 #, python-format
 msgid "Image aspect must be %s"
 msgstr "Аспект изображения должен быть %s"
 
-#: image_assets/models.py:132
+#: image_assets/models.py:137
 #, python-format
 msgid "Image aspect must be %(aspect)s ± %(accuracy)s"
 msgstr "Аспект изображения должен быть %(aspect)s ± %(accuracy)s"
 
-#: image_assets/models.py:149
-msgid "Asset"
-msgstr "Ассет"
-
-#: image_assets/models.py:150
-msgid "Assets"
-msgstr "Ассеты"
-
-#: image_assets/models.py:159 image_assets/models.py:176
+#: image_assets/models.py:153 image_assets/models.py:189
 msgid "Image"
 msgstr "Изображение"
 
-#: image_assets/models.py:162
+#: image_assets/models.py:156
 msgid "Active"
 msgstr "Активен"
 
-#: image_assets/models.py:165 image_assets/models.py:181
+#: image_assets/models.py:159 image_assets/models.py:194
 msgid "Content Type"
 msgstr "Тип объекта"
 
-#: image_assets/models.py:166 image_assets/models.py:182
+#: image_assets/models.py:160 image_assets/models.py:195
 msgid "Object ID"
 msgstr "ID объекта"
 
-#: image_assets/models.py:187
+#: image_assets/models.py:165
+msgid "Asset"
+msgstr "Ассет"
+
+#: image_assets/models.py:166
+msgid "Assets"
+msgstr "Ассеты"
+
+#: image_assets/models.py:200
 msgid "Deleted Asset"
 msgstr "Удаленный ассет"
 
-#: image_assets/models.py:188
+#: image_assets/models.py:201
 msgid "Deleted Assets"
 msgstr "Удаленные ассеты"
