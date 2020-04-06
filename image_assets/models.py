@@ -7,7 +7,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models.base import ModelBase
-from django.db.models.fields.files import ImageFieldFile
+from django.db.models.fields.files import FieldFile
 from django.utils.translation import gettext_lazy as _
 
 from image_assets import defaults, validators
@@ -90,7 +90,7 @@ class AssetType(models.Model):
             self.validate_aspect,
         ]
 
-    def validate_max_size(self, value: ImageFieldFile) -> List[str]:
+    def validate_max_size(self, value: FieldFile) -> List[str]:
         """ Validate max file size."""
         if (self.max_size and value.size and
                 self.max_size < value.size):

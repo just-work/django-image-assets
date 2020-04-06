@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from PIL import Image
 from django.core.exceptions import ValidationError
 from django.core.files import File
-from django.db.models.fields.files import ImageFieldFile
+from django.db.models.fields.files import ImageFieldFile, FieldFile
 from django.utils.deconstruct import deconstructible
 
 from image_assets import models
@@ -13,7 +13,7 @@ from image_assets import models
 class AssetValidator:
     """ Asset image file validator."""
 
-    def __call__(self, value: ImageFieldFile):
+    def __call__(self, value: FieldFile):
         asset = value.instance
         if asset.asset_type_id is None:
             # asset type not filled, no data to validate
