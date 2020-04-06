@@ -373,3 +373,18 @@ class AssetValidationTestCase(VideoBaseTestCase):
         self.asset_type.accuracy = 0.01
 
         self.assert_validation_passed()
+
+    def test_validate_exact_aspect(self):
+        """
+        Asset aspect ratio must correspond asset type aspect with accuracy.
+        """
+        # zero aspect disables aspect check
+        self.assert_validation_passed()
+
+        self.asset_type.aspect = 3
+
+        self.assert_validation_not_passed()
+
+        self.asset_type.aspect = 2
+
+        self.assert_validation_passed()
