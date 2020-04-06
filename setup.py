@@ -72,6 +72,7 @@ setup(
     install_requires=[
         'Django',
         'Pillow',
+        'django-bitfield',
     ],
     classifiers=[
         'Development Status :: 1 - Planning',

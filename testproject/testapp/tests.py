@@ -296,7 +296,7 @@ class AssetValidationTestCase(VideoBaseTestCase):
 
     def test_validate_format(self):
         """ Asset image format must correspond asset type format."""
-        self.asset_type.format = assets_models.AssetType.JPEG
+        self.asset_type.formats = assets_models.AssetType.formats.jpeg
 
         self.assert_validation_not_passed()
 
@@ -310,6 +310,12 @@ class AssetValidationTestCase(VideoBaseTestCase):
             image_format='png', filename='asset.jpg')
 
         self.assert_validation_not_passed()
+
+        # multiple formats are allowed
+        formats = assets_models.AssetType.formats
+        self.asset_type.formats = formats.jpeg | formats.png
+
+        self.assert_validation_passed()
 
     def test_validate_min_width(self):
         """ Asset image width must correspond asset type min width."""
