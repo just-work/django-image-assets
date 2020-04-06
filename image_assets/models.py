@@ -43,7 +43,8 @@ class AssetType(models.Model):
     )
 
     slug = models.SlugField(verbose_name=_("Slug"), unique=True)
-    formats = BitField(flags=FORMAT_CHOICES)
+    formats = BitField(verbose_name=_('Formats'), flags=FORMAT_CHOICES,
+                       default=0)
     min_width = models.IntegerField(
         verbose_name=_('Min Width'), default=0)
     min_height = models.IntegerField(
