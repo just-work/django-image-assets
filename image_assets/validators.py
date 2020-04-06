@@ -3,10 +3,12 @@ from contextlib import contextmanager
 from PIL import Image
 from django.core.exceptions import ValidationError
 from django.db.models.fields.files import ImageFieldFile
+from django.utils.deconstruct import deconstructible
 
 from image_assets import models
 
 
+@deconstructible
 class AssetValidator:
     """ Asset image file validator."""
 

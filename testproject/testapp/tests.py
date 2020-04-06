@@ -17,7 +17,7 @@ class VideoBaseTestCase(ImageAssetsMixin, BaseTestCase):
         super().setUpTestData()
         cls.image = cls.create_image()
         cls.asset_type = cls.create_asset_type(
-            slug="video_asset", format=assets_models.AssetType.PNG,
+            slug="video_asset", formats=assets_models.AssetType.formats.png,
             required_for=[models.Video])
         cls.video = models.Video.objects.create(pk=23)
 
@@ -39,11 +39,11 @@ class VideoAssetTypeTestCase(VideoBaseTestCase):
     def setUpTestData(cls):
         super().setUpTestData()
         cls.allowed_asset_type = cls.create_asset_type(
-            slug="allowed_asset", format=assets_models.AssetType.PNG,
+            slug="allowed_asset", formats=assets_models.AssetType.formats.png,
             allowed_for=[models.Video]
         )
         cls.unrelated_asset_type = cls.create_asset_type(
-            slug="unrelated", format=assets_models.AssetType.PNG)
+            slug="unrelated", formats=assets_models.AssetType.formats.png)
 
     def test_required_asset_types(self):
         """ Check fetching required asset types for model or instance."""
