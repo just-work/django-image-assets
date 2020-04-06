@@ -382,6 +382,8 @@ class AssetValidationTestCase(VideoBaseTestCase):
         """
         Asset aspect ratio must correspond asset type aspect with accuracy.
         """
+        self.asset_type.accuracy = 0
+
         # zero aspect disables aspect check
         self.assert_validation_passed()
 
