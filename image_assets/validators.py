@@ -2,6 +2,7 @@ from contextlib import contextmanager
 
 from PIL import Image
 from django.core.exceptions import ValidationError
+from django.core.files import File
 from django.db.models.fields.files import ImageFieldFile
 from django.utils.deconstruct import deconstructible
 
@@ -30,6 +31,6 @@ class AssetValidator:
             raise ValidationError(errors)
 
     @contextmanager
-    def open_file(self, file):
+    def open_file(self, file: File) -> Image.Image:
         with Image.open(file) as file_content:
             yield file_content
