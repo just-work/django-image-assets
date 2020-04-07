@@ -9,9 +9,10 @@ def migrate_formats(apps, schema_editor):
     app_label, model_name = defaults.ASSET_TYPE_MODEL.split('.')
     # noinspection PyPep8Naming
     AssetType = apps.get_model(app_label, model_name)
+    formats = AssetType._meta.get_field('formats')
 
     for at in AssetType.objects.all():
-        flag = getattr(AssetType.formats, at.format)
+        flag = getattr(formats, at.format)
         at.formats = flag
         at.save()
 
