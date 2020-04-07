@@ -17,7 +17,7 @@ class VideoBaseTestCase(ImageAssetsMixin, BaseTestCase):
         super().setUpTestData()
         cls.image = cls.create_image()
         cls.asset_type = cls.create_asset_type(
-            slug="video_asset", format=assets_models.AssetType.PNG,
+            slug="video_asset", formats=assets_models.AssetType.formats.png,
             required_for=[models.Video])
         cls.video = models.Video.objects.create(pk=23)
 
@@ -39,14 +39,18 @@ class VideoAssetTypeTestCase(VideoBaseTestCase):
     def setUpTestData(cls):
         super().setUpTestData()
         cls.allowed_asset_type = cls.create_asset_type(
-            slug="allowed_asset", format=assets_models.AssetType.PNG,
+            slug="allowed_asset", formats=assets_models.AssetType.formats.png,
             allowed_for=[models.Video]
         )
         cls.unrelated_asset_type = cls.create_asset_type(
-            slug="unrelated", format=assets_models.AssetType.PNG)
+            slug="unrelated", formats=assets_models.AssetType.formats.png)
 
     def test_required_asset_types(self):
         """ Check fetching required asset types for model or instance."""
+        qs = assets_models.AssetType.objects.get_for_model(None)
+        # Return all asset types for unknown object
+        self.assertEqual(qs.count(), assets_models.AssetType.objects.count())
+
         qs = assets_models.AssetType.objects.get_required(self.video)
         # Video has active asset of required asset type
         self.assertEqual(qs.count(), 0)
@@ -296,7 +300,7 @@ class AssetValidationTestCase(VideoBaseTestCase):
 
     def test_validate_format(self):
         """ Asset image format must correspond asset type format."""
-        self.asset_type.format = assets_models.AssetType.JPEG
+        self.asset_type.formats = assets_models.AssetType.formats.jpeg
 
         self.assert_validation_not_passed()
 
@@ -310,6 +314,12 @@ class AssetValidationTestCase(VideoBaseTestCase):
             image_format='png', filename='asset.jpg')
 
         self.assert_validation_not_passed()
+
+        # multiple formats are allowed
+        formats = assets_models.AssetType.formats
+        self.asset_type.formats = formats.jpeg | formats.png
+
+        self.assert_validation_passed()
 
     def test_validate_min_width(self):
         """ Asset image width must correspond asset type min width."""
@@ -365,5 +375,22 @@ class AssetValidationTestCase(VideoBaseTestCase):
 
         self.asset_type.aspect = 1.99
         self.asset_type.accuracy = 0.01
+
+        self.assert_validation_passed()
+
+    def test_validate_exact_aspect(self):
+        """
+        Asset aspect ratio must correspond asset type aspect with accuracy.
+        """
+        self.asset_type.accuracy = 0
+
+        # zero aspect disables aspect check
+        self.assert_validation_passed()
+
+        self.asset_type.aspect = 3
+
+        self.assert_validation_not_passed()
+
+        self.asset_type.aspect = 2
 
         self.assert_validation_passed()
