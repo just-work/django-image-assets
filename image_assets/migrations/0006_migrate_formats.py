@@ -6,9 +6,8 @@ from image_assets import defaults
 
 # noinspection PyUnusedLocal
 def migrate_formats(apps, schema_editor):
-    app_label, model_name = defaults.ASSET_TYPE_MODEL.split('.')
     # noinspection PyPep8Naming
-    AssetType = apps.get_model(app_label, model_name)
+    AssetType = apps.get_model('image_assets', 'AssetType')
 
     for at in AssetType.objects.all():
         flag = getattr(AssetType.formats, at.format)
@@ -17,11 +16,13 @@ def migrate_formats(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('image_assets', '0005_assettype_formats'),
     ]
 
-    operations = [
-        migrations.RunPython(migrate_formats, migrations.RunPython.noop),
-    ]
+    operations = []
+
+    if defaults.ASSET_TYPE_MODEL == 'image_assets.AssetType':
+        operations.extend([
+            migrations.RunPython(migrate_formats, migrations.RunPython.noop),
+        ])
