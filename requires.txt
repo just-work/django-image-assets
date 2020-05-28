@@ -1,5 +1,5 @@
 Django==3.0.5
-Pillow==7.1.1
+Pillow==7.1.2
 django-admin-smoke==0.0.9
 dj-inmemorystorage==2.1.0
 factory-boy==2.12.0
