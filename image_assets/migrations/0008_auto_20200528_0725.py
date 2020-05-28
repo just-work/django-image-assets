@@ -14,6 +14,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='assettype',
             name='formats',
-            field=bitfield.models.BitField((('jpeg', 'JPEG'), ('png', 'PNG')), default=0, verbose_name='Formats'),
+            field=bitfield.models.BitField((('jpeg', 'JPEG'), ('png', 'PNG')), default=0, verbose_name='Formats111'),
         ),
     ]
