@@ -72,7 +72,7 @@ setup(
     install_requires=[
         'Django>=2.2,<3.2',
         'Pillow~=7.0',
-        'django-bitfield~2.0',
+        'django-bitfield~=2.0',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
