@@ -1,5 +1,4 @@
-# noinspection PyPackageRequirements
-import factory
+from factory.django import DjangoModelFactory
 
 from image_assets import models
 
@@ -9,11 +8,11 @@ Asset = models.get_asset_model()
 __all__ = ['AssetFactory', 'AssetTypeFactory']
 
 
-class AssetTypeFactory(factory.DjangoModelFactory):
+class AssetTypeFactory(DjangoModelFactory):
     class Meta:
         model = AssetType
 
 
-class AssetFactory(factory.DjangoModelFactory):
+class AssetFactory(DjangoModelFactory):
     class Meta:
         model = Asset
