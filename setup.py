@@ -71,7 +71,7 @@ setup(
     description='Django application for image assets management',
     install_requires=[
         'Django>=2.2,<3.2',
-        'Pillow~=7.0',
+        'Pillow~=8.1.2',
         'django-bitfield~=2.0',
     ],
     classifiers=[
