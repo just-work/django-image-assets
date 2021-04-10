@@ -70,8 +70,8 @@ setup(
     author_email='zimbler@gmail.com',
     description='Django application for image assets management',
     install_requires=[
-        'Django>=2.2,<3.2',
-        'Pillow~=8.1.2',
+        'Django>=2.2,<3.3',
+        'Pillow>=8.1.2,<9.0.0',
         'django-bitfield~=2.0',
     ],
     classifiers=[
@@ -80,6 +80,7 @@ setup(
         'Framework :: Django :: 2.2',
         'Framework :: Django :: 3.0',
         'Framework :: Django :: 3.1',
+        'Framework :: Django :: 3.2',
         'Operating System :: POSIX',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
