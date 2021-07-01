@@ -1,4 +1,4 @@
-Pillow==8.2.0
+Pillow==8.3.0
 Django==3.2.3
 django-admin-smoke==0.2.0
 dj-inmemorystorage==2.1.0
