@@ -132,7 +132,7 @@ class AssetType(models.Model):
             if image_aspect != self.aspect:
                 msg = _('Image aspect must be %s')
                 return [msg % self.aspect]
-        elif round(delta / self.accuracy) > 1:
+        elif round(delta / self.accuracy, 4) > 1:
             # round at scale of accuracy
             msg = _('Image aspect must be %(aspect)s ± %(accuracy)s')
             args = {
