@@ -1,12 +1,41 @@
 from contextlib import contextmanager
+from typing import Optional
 
-from PIL import Image
 from django.core.exceptions import ValidationError
 from django.core.files import File
-from django.db.models.fields.files import ImageFieldFile, FieldFile
+from django.db.models.fields.files import FieldFile
 from django.utils.deconstruct import deconstructible
+from pymediainfo import MediaInfo
 
 from image_assets import models
+
+
+class MediaInfoFile:
+    def __init__(self, info: MediaInfo):
+        self.file = None
+        self.video = None
+        for track in info.tracks:
+            if track.kind_of_stream in ('Video', 'Image'):
+                self.video = track
+            if track.kind_of_stream == 'General':
+                self.file = track
+
+    @property
+    def duration(self) -> Optional[float]:
+        """Returns the duration of the video in milliseconds."""
+        return self.video and self.video.duration
+
+    @property
+    def format(self) -> str:
+        return self.file and self.file.format
+
+    @property
+    def width(self):
+        return self.video and self.video.width or 0
+
+    @property
+    def height(self):
+        return self.video and self.video.height or 0
 
 
 @deconstructible
@@ -31,6 +60,6 @@ class AssetValidator:
             raise ValidationError(errors)
 
     @contextmanager
-    def open_file(self, file: File) -> Image.Image:
-        with Image.open(file) as file_content:
-            yield file_content
+    def open_file(self, file: File) -> MediaInfoFile:
+        info = MediaInfo.parse(file)
+        yield MediaInfoFile(info)

@@ -4,3 +4,4 @@ django-admin-smoke==0.2.0
 dj-inmemorystorage==2.1.0
 factory-boy==3.2.1
 django-bitfield==2.1.0
+pymediainfo==5.1.0

@@ -1,6 +1,6 @@
+from datetime import timedelta
 from typing import Type, List, Callable
 
-from PIL import Image
 from bitfield import BitField
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -37,9 +37,11 @@ class AssetTypeManager(models.Manager):
 class AssetType(models.Model):
     JPEG = 'jpeg'
     PNG = 'png'
+    MP4 = 'mpeg-4'
     FORMAT_CHOICES = (
         (JPEG, 'JPEG'),
-        (PNG, 'PNG')
+        (PNG, 'PNG'),
+        (MP4, 'MP4')
     )
 
     slug = models.SlugField(verbose_name=_("Slug"), unique=True)
@@ -49,6 +51,8 @@ class AssetType(models.Model):
         verbose_name=_('Min Width'), default=0)
     min_height = models.IntegerField(
         verbose_name=_('Min Height'), default=0)
+    min_duration = models.IntegerField(
+        verbose_name=_('Min Duration'), default=0)
     aspect = models.FloatField(
         verbose_name=_('Aspect'), default=0)
     accuracy = models.FloatField(
@@ -76,19 +80,25 @@ class AssetType(models.Model):
         return self.slug
 
     # noinspection PyUnusedLocal
-    def get_validators(self, file: Image.Image
-                       ) -> List[Callable[[Image.Image], List[str]]]:
+    def get_validators(
+            self, file: validators.MediaInfoFile
+    ) -> List[Callable[[validators.MediaInfoFile], List[str]]]:
         """
         Returns list of checks to run against file.
 
-        :param file: opened image file.
+        :param file: opened file.
         :return: list of check methods.
         """
-        return [
+        checkers = [
             self.validate_format,
             self.validate_dimensions,
             self.validate_aspect,
         ]
+
+        if file.format.lower() == AssetType.MP4:
+            checkers.append(self.validate_duration)
+
+        return checkers
 
     def validate_max_size(self, value: FieldFile) -> List[str]:
         """ Validate max file size."""
@@ -98,7 +108,7 @@ class AssetType(models.Model):
             return [msg % self.max_size]
         return []
 
-    def validate_format(self, file: Image.Image) -> List[str]:
+    def validate_format(self, file: validators.MediaInfoFile) -> List[str]:
         """ Validate allowed format list."""
         fmt = file.format.lower()
         set_flags = dict(self.formats.items())
@@ -109,7 +119,7 @@ class AssetType(models.Model):
             return [msg % formats]
         return []
 
-    def validate_dimensions(self, file: Image.Image) -> List[str]:
+    def validate_dimensions(self, file: validators.MediaInfoFile) -> List[str]:
         """ Validate minimum image width and height."""
         errors = []
         # image width
@@ -122,7 +132,7 @@ class AssetType(models.Model):
             errors.append(msg % self.min_height)
         return errors
 
-    def validate_aspect(self, file: Image.Image) -> List[str]:
+    def validate_aspect(self, file: validators.MediaInfoFile) -> List[str]:
         """ Validate image aspect ratio with accuracy."""
         if not (file.width and file.height and self.aspect):
             return []
@@ -142,6 +152,13 @@ class AssetType(models.Model):
             return [msg % args]
         return []
 
+    def validate_duration(self, file: validators.MediaInfoFile) -> List[str]:
+        """Validate minimum video duration."""
+        if file.duration and file.duration // 1000 < self.min_duration:
+            msg = _('The duration of the video must be at least %s')
+            return [msg % timedelta(seconds=self.min_duration)]
+        return []
+
 
 def get_asset_type_model() -> Type[AssetType]:
     app_label, model_name = defaults.ASSET_TYPE_MODEL.split('.')
@@ -149,7 +166,7 @@ def get_asset_type_model() -> Type[AssetType]:
 
 
 class Asset(models.Model):
-    image = models.ImageField(
+    image = models.FileField(
         verbose_name=_('Image'), validators=[validators.AssetValidator()])
     asset_type = models.ForeignKey(
         AssetType, models.CASCADE, verbose_name=_('Asset Type'))
@@ -186,7 +203,7 @@ def get_asset_model() -> Type[Asset]:
 
 
 class DeletedAsset(models.Model):
-    image = models.ImageField(verbose_name=_('Image'))
+    image = models.FileField(verbose_name=_('Image'))
     asset_type = models.ForeignKey(
         defaults.ASSET_TYPE_MODEL, models.CASCADE, verbose_name=_('Asset Type'))
 

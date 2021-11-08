@@ -1,5 +1,6 @@
 import io
 from typing import Tuple, Optional, Iterable
+from pathlib import Path
 
 from PIL import Image
 from django.contrib.contenttypes.models import ContentType
@@ -45,6 +46,12 @@ class ImageAssetsMixin:
         content_type = f"image/{image_format}"
         return SimpleUploadedFile(filename, buffer.getvalue(),
                                   content_type=content_type)
+
+    @classmethod
+    def create_uploaded_video(cls, filename="video.mp4") -> SimpleUploadedFile:
+        with open(Path(__file__).parent / "data/mark.mp4", 'rb') as f:
+            return SimpleUploadedFile(filename, f.read(10000),
+                                      content_type='video/mp4')
 
     @classmethod
     def create_asset_type(cls,

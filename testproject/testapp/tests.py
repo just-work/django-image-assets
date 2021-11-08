@@ -4,20 +4,28 @@ from admin_smoke.tests import AdminTests, AdminBaseTestCase, BaseTestCase
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 
-from image_assets import models as assets_models
+from image_assets import models as assets_models, validators
 from image_assets.tests.mixins import ImageAssetsMixin
 from testproject.testapp import admin, models
+
+ASSET_TYPE_PNG = assets_models.AssetType.formats.png
+ASSET_TYPE_MP4 = getattr(
+    assets_models.AssetType.formats,
+    assets_models.AssetType.MP4
+)
 
 
 class VideoBaseTestCase(ImageAssetsMixin, BaseTestCase):
     """ Common methods for test cases."""
+
+    asset_format = ASSET_TYPE_PNG
 
     @classmethod
     def setUpTestData(cls):
         super().setUpTestData()
         cls.image = cls.create_image()
         cls.asset_type = cls.create_asset_type(
-            slug="video_asset", formats=assets_models.AssetType.formats.png,
+            slug="video_asset", formats=cls.asset_format,
             required_for=[models.Video])
         cls.video = models.Video.objects.create(pk=23)
 
@@ -32,18 +40,24 @@ class VideoBaseTestCase(ImageAssetsMixin, BaseTestCase):
         return name
 
 
-class VideoAssetTypeTestCase(VideoBaseTestCase):
+class ImageAssetTypeTestCase(VideoBaseTestCase):
     video_content_type: ContentType
+    asset_format = ASSET_TYPE_PNG
 
     @classmethod
     def setUpTestData(cls):
         super().setUpTestData()
         cls.allowed_asset_type = cls.create_asset_type(
-            slug="allowed_asset", formats=assets_models.AssetType.formats.png,
+            slug="allowed_asset", formats=cls.asset_format,
             allowed_for=[models.Video]
         )
         cls.unrelated_asset_type = cls.create_asset_type(
-            slug="unrelated", formats=assets_models.AssetType.formats.png)
+            slug="unrelated", formats=cls.asset_format
+        )
+
+    def run_validation(self):
+        validator = validators.AssetValidator()
+        validator(self.asset.image)
 
     def test_required_asset_types(self):
         """ Check fetching required asset types for model or instance."""
@@ -76,6 +90,97 @@ class VideoAssetTypeTestCase(VideoBaseTestCase):
         qs = assets_models.AssetType.objects.get_required(self.video)
         # Video has active asset for another asset type
         self.assertEqual(set(qs), {self.asset_type})
+
+    def test_asset_valid(self):
+        """ The file created in setUpTestData is valid by default."""
+        self.assertIsNone(self.asset.clean())
+
+    def test_min_dimensions(self):
+        """ Dimension validation."""
+        cases = (
+            ('width', 0, True),
+            ('width', 100, False),
+            ('height', 0, True),
+            ('height', 100, False),
+        )
+        for field, value, valid in cases:
+            self.asset_type.refresh_from_db()
+            with self.subTest(field=field, value=value):
+                setattr(self.asset_type, f'min_{field}', value)
+                if valid:
+                    self.assertIsNone(self.run_validation())
+                else:
+                    with self.assertRaises(ValidationError):
+                        self.run_validation()
+
+    def test_validate_format(self):
+        """ Format validate."""
+        self.asset.image.file = self.create_uploaded_image(image_format='jpeg')
+        with self.assertRaises(ValidationError):
+            self.run_validation()
+
+    def test_file_size(self):
+        """ File size validation."""
+        with self.subTest(max_size=0):
+            self.asset_type.max_size = 0
+            self.assertIsNone(
+                self.run_validation()
+            )
+
+        with self.subTest(max_size=10):
+            self.asset_type.max_size = 10
+            with self.assertRaises(ValidationError):
+                self.run_validation()
+
+    def test_min_duration(self):
+        """ Duration check for pictures is disabled."""
+        with self.subTest(duration=10):
+            self.asset_type.min_duration = 10
+            self.assertIsNone(self.run_validation())
+
+
+class VideoAssetTypeTestCase(ImageAssetTypeTestCase):
+    asset_format = ASSET_TYPE_MP4
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+
+        cls.asset_type.formats = cls.asset_format
+        cls.asset_type.min_width = 50
+        cls.asset_type.min_height = 50
+        cls.asset_type.aspect = 1.0
+        cls.asset_type.accuracy = 0.1
+        cls.asset_type.max_size = 3000
+        cls.asset_type.min_duration = 1
+        cls.asset_type.save()
+
+    def setUp(self):
+        super().setUp()
+        self.asset.image = self.create_uploaded_video()
+        self.asset.save()
+
+    def test_validate_format(self):
+        """ Format validate."""
+        self.asset.image.file = self.create_uploaded_image(
+            image_format='jpeg',
+            dimensions=(50, 50)
+        )
+        with self.assertRaises(ValidationError):
+            self.run_validation()
+
+    def test_min_duration(self):
+        """ Video duration validation."""
+        with self.subTest(duration=0):
+            self.asset_type.min_duration = 0
+            self.assertIsNone(
+                self.run_validation()
+            )
+
+        with self.subTest(duration=10):
+            self.asset_type.min_duration = 10
+            with self.assertRaises(ValidationError):
+                self.run_validation()
 
 
 class VideoAdminTestCase(VideoBaseTestCase, AdminTests, AdminBaseTestCase):
