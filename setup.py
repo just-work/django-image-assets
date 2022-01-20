@@ -70,7 +70,7 @@ setup(
     author_email='zimbler@gmail.com',
     description='Django application for image assets management',
     install_requires=[
-        'Django>=2.2,<3.3',
+        'Django>=2.2,<4.1',
         'Pillow>=8.1.2,<10.0.0',
         'django-bitfield~=2.0',
     ],
