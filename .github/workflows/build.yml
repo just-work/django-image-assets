@@ -25,7 +25,3 @@ jobs:
         run: |
           tox
           python setup.py sdist bdist_wheel install
-      - name: Run Tests
-        run: |
-          python manage.py makemigrations --check --dry-run
-          python manage.py test
