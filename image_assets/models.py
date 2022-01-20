@@ -1,6 +1,13 @@
 from typing import Type, List, Callable
 
 from PIL import Image
+
+import django
+if django.VERSION >= (4, 0, 0):
+    # Fix django-bitfield-2.1.0 incompatibility with django-4.0
+    import django.utils.encoding
+    django.utils.encoding.force_text = django.utils.encoding.force_str
+
 from bitfield import BitField
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey
