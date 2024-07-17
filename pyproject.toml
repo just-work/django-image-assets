@@ -20,7 +20,7 @@ dependencies = [
     "Django>=2.2,<5.1",
     "django-bitfield~=2.0",
     # Images
-    "Pillow>=8.1.2,<10.0.0",
+    "Pillow>=8.1.2,<11.0.0",
 ]
 license = { text = "MIT" }
 keywords = [
@@ -37,7 +37,6 @@ classifiers = [
         'Framework :: Django :: 4.2',
         'Framework :: Django :: 5.0',
         'Operating System :: POSIX',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
