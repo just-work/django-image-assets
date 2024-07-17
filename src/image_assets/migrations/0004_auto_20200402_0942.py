@@ -3,7 +3,7 @@
 from django.db import migrations, models
 import django.db.models.deletion
 
-from src.image_assets import defaults
+from image_assets import defaults
 
 
 class Migration(migrations.Migration):

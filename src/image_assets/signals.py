@@ -3,7 +3,7 @@ from typing import Type
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 
-from src.image_assets import models
+from image_assets import models
 
 
 # noinspection PyUnusedLocal

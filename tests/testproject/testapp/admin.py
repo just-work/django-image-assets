@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from src.image_assets.admin import AssetsInline
+from image_assets.admin import AssetsInline
 from tests.testproject.testapp import models
 
 

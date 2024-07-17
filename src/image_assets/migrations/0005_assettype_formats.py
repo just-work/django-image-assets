@@ -3,7 +3,7 @@
 import bitfield.models
 from django.db import migrations
 
-from src.image_assets import defaults
+from image_assets import defaults
 
 
 class Migration(migrations.Migration):

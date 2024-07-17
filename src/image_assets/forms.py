@@ -3,7 +3,7 @@ from django.contrib.contenttypes.forms import BaseGenericInlineFormSet
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
-from src.image_assets import models
+from image_assets import models
 
 
 class AssetForm(forms.ModelForm):

@@ -6,7 +6,7 @@ from django.core.files import File
 from django.db.models.fields.files import ImageFieldFile, FieldFile
 from django.utils.deconstruct import deconstructible
 
-from src.image_assets import models
+from image_assets import models
 
 
 @deconstructible

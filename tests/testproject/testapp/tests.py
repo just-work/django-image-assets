@@ -4,8 +4,8 @@ from admin_smoke.tests import AdminTests, AdminBaseTestCase, BaseTestCase
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 
-from src.image_assets import models as assets_models
-from src.image_assets.tests.mixins import ImageAssetsMixin
+from image_assets import models as assets_models
+from image_assets.tests.mixins import ImageAssetsMixin
 from tests.testproject.testapp import admin, models
 
 

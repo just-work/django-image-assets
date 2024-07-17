@@ -17,7 +17,7 @@ from django.db.models.base import ModelBase
 from django.db.models.fields.files import FieldFile
 from django.utils.translation import gettext_lazy as _
 
-from src.image_assets import defaults, validators
+from image_assets import defaults, validators
 
 
 class AssetTypeManager(models.Manager):

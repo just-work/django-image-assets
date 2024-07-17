@@ -1,7 +1,7 @@
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 
-from src.image_assets.models import Asset
+from image_assets.models import Asset
 
 
 class Video(models.Model):
