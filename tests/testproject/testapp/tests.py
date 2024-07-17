@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 
 from image_assets import models as assets_models
 from image_assets.tests.mixins import ImageAssetsMixin
-from tests.testproject.testapp import admin, models
+from testproject.testapp import admin, models
 
 
 class VideoBaseTestCase(ImageAssetsMixin, BaseTestCase):

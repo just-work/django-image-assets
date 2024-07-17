@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from image_assets.admin import AssetsInline
-from tests.testproject.testapp import models
+from testproject.testapp import models
 
 
 @admin.register(models.Video)
