@@ -24,4 +24,4 @@ jobs:
       - name: Test with tox
         run: |
           tox
-          python setup.py sdist bdist_wheel install
+          python -m build
