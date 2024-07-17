@@ -3,7 +3,7 @@ from bitfield.forms import BitFieldCheckboxSelectMultiple
 from django.contrib import admin
 from django.contrib.contenttypes.admin import GenericTabularInline
 
-from image_assets import models, forms
+from src.image_assets import models, forms
 
 
 @admin.register(models.get_asset_type_model())

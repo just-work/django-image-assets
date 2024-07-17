@@ -2,7 +2,7 @@
 
 from django.db import migrations, models
 
-from image_assets import defaults
+from src.image_assets import defaults
 
 
 class Migration(migrations.Migration):

@@ -2,8 +2,8 @@
 
 import bitfield.models
 from django.db import migrations, models
-import image_assets.validators
-from image_assets import defaults
+from src import image_assets
+from src.image_assets import defaults
 
 
 class Migration(migrations.Migration):
@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
                 model_name='asset',
                 name='image',
                 field=models.ImageField(upload_to='', validators=[
-                    image_assets.validators.AssetValidator()],
+                    src.image_assets.validators.AssetValidator()],
                                         verbose_name='Image'),
             ),
             migrations.AlterField(

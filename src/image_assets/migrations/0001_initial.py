@@ -2,8 +2,8 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
-import image_assets.models
-from image_assets import defaults
+from src import image_assets
+from src.image_assets import defaults
 
 
 class Migration(migrations.Migration):

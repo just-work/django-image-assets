@@ -1,6 +1,6 @@
 from factory.django import DjangoModelFactory
 
-from image_assets import models
+from src.image_assets import models
 
 AssetType = models.get_asset_type_model()
 Asset = models.get_asset_model()

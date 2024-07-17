@@ -6,13 +6,13 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db.models.base import ModelBase, Model
 
-from image_assets import models
+from src.image_assets import models
 
 AssetType = models.get_asset_type_model()
 Asset = models.get_asset_model()
 
 try:
-    from image_assets.tests.factories import *
+    from src.image_assets.tests.factories import *
 except ImportError:  # pragma: no cover
     # factory-boy not installed, no default fuzzy attributes will be available
     AssetTypeFactory = AssetType.objects
