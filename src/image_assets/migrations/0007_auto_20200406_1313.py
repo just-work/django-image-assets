@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
                 model_name='asset',
                 name='image',
                 field=models.ImageField(upload_to='', validators=[
-                    src.image_assets.validators.AssetValidator()],
+                    image_assets.validators.AssetValidator()],
                                         verbose_name='Image'),
             ),
             migrations.AlterField(
