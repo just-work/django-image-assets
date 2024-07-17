@@ -2,7 +2,7 @@
 
 import bitfield.models
 from django.db import migrations, models
-import image_assets.validators
+import image_assets
 from image_assets import defaults
 
 
