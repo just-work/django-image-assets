@@ -2,7 +2,7 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
-from src import image_assets
+import image_assets
 from image_assets import defaults
 
 
