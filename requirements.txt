@@ -1,6 +1,6 @@
 Django==5.0.7
 Pillow==10.4.0
-django-admin-smoke==0.5.0
+django-admin-smoke==0.5.1
 dj-inmemorystorage==2.1.0
 factory-boy==3.3.0
 django-bitfield==2.2.0
